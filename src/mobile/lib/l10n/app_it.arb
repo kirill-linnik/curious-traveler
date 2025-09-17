@@ -101,5 +101,7 @@
   "homeLocationFound": "Posizione trovata",
   "homeLocationError": "Impossibile rilevare la posizione",
   "homeLocationRetry": "Riprova",
+  "homeTitleStartOfJourney": "Inizio del viaggio",
+  "homeTitleEndOfJourney": "Fine del viaggio",
   "mapLoadingText": "Caricamento mappa..."
 }

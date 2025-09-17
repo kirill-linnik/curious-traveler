@@ -101,5 +101,7 @@
   "homeLocationFound": "Standort gefunden",
   "homeLocationError": "Standort konnte nicht ermittelt werden",
   "homeLocationRetry": "Erneut versuchen",
+  "homeTitleStartOfJourney": "Start der Reise",
+  "homeTitleEndOfJourney": "Ende der Reise",
   "mapLoadingText": "Karte wird geladen..."
 }

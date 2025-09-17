@@ -101,5 +101,7 @@
   "homeLocationFound": "Местоположение найдено",
   "homeLocationError": "Не удалось определить местоположение",
   "homeLocationRetry": "Попробовать снова",
+  "homeTitleStartOfJourney": "Начало путешествия",
+  "homeTitleEndOfJourney": "Конец путешествия",
   "mapLoadingText": "Загрузка карты..."
 }

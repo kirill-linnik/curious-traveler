@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:curious_traveler/widgets/audio_player_widget.dart';
 import 'package:curious_traveler/providers/audio_provider.dart';
+import 'package:curious_traveler/l10n/app_localizations.dart';
 
 class MockAudioProvider extends Mock implements AudioProvider {}
 
@@ -17,6 +19,13 @@ void main() {
 
     Widget createTestWidget() {
       return MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en', 'US')],
         home: Scaffold(
           body: ChangeNotifierProvider<AudioProvider>.value(
             value: mockAudioProvider,

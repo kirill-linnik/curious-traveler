@@ -125,19 +125,53 @@ enum LocationStatus {
   searchFailed,
 }
 
+/// Selection model for search results - replaces old LocationSearchResult usage
+class LocationSelection extends Equatable {
+  final String id; // stable ID
+  final String type; // "POI" | "Address" | "Locality"
+  final String name;
+  final String? fullAddress;
+  final String? locality;
+  final ({ double lat, double lon }) position;
+  final ({ double north, double south, double east, double west })? bbox;
+
+  const LocationSelection({
+    required this.id,
+    required this.type,
+    required this.name,
+    this.fullAddress,
+    this.locality,
+    required this.position,
+    this.bbox,
+  });
+
+  factory LocationSelection.fromSearchResult(LocationSearchResult result) {
+    return LocationSelection(
+      id: result.id,
+      type: result.type,
+      name: result.name,
+      fullAddress: result.formattedAddress.isNotEmpty ? result.formattedAddress : null,
+      locality: result.locality.isNotEmpty ? result.locality : null,
+      position: (lat: result.latitude, lon: result.longitude),
+      bbox: null, // Can be added later if needed
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, type, name, fullAddress, locality, position, bbox];
+}
+
 /// Immutable snapshot of a location detection result
 /// Used to store current location data for the lifetime of a Home screen instance
 class LocationSnapshot extends Equatable {
-  final String displayText; // e.g., formattedAddress
+  final String displayText; // formatted address
   final String? locality;
-  final LocationPosition? position;
-  final String source; // 'Current' or 'Another' (for debugging/telemetry)
+  final ({ double lat, double lon })? position;
 
   const LocationSnapshot({
     required this.displayText,
     this.locality,
     this.position,
-    required this.source,
   });
 
   factory LocationSnapshot.fromCurrentLocation({
@@ -149,8 +183,7 @@ class LocationSnapshot extends Equatable {
     return LocationSnapshot(
       displayText: displayText,
       locality: locality,
-      position: LocationPosition(latitude: latitude, longitude: longitude),
-      source: 'Current',
+      position: (lat: latitude, lon: longitude),
     );
   }
 
@@ -160,13 +193,12 @@ class LocationSnapshot extends Equatable {
     return LocationSnapshot(
       displayText: result.formattedAddress.isNotEmpty ? result.formattedAddress : result.name,
       locality: result.locality.isNotEmpty ? result.locality : null,
-      position: LocationPosition(latitude: result.latitude, longitude: result.longitude),
-      source: 'Another',
+      position: (lat: result.latitude, lon: result.longitude),
     );
   }
 
   @override
-  List<Object?> get props => [displayText, locality, position, source];
+  List<Object?> get props => [displayText, locality, position];
 }
 
 /// Position data for a location

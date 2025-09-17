@@ -101,5 +101,7 @@
   "homeLocationFound": "위치를 찾았습니다",
   "homeLocationError": "위치를 감지할 수 없습니다",
   "homeLocationRetry": "다시 시도",
+  "homeTitleStartOfJourney": "여행의 시작",
+  "homeTitleEndOfJourney": "여행의 끝",
   "mapLoadingText": "지도 로딩 중..."
 }

@@ -480,6 +480,14 @@
   "@homeLocationRetry": {
     "description": "Button text to retry location detection"
   },
+  "homeTitleStartOfJourney": "Start of the journey",
+  "@homeTitleStartOfJourney": {
+    "description": "Title for the start location block"
+  },
+  "homeTitleEndOfJourney": "End of the journey",
+  "@homeTitleEndOfJourney": {
+    "description": "Title for the end location block"
+  },
   "mapLoadingText": "Loading map...",
   "@mapLoadingText": {
     "description": "Loading text displayed while map is loading"

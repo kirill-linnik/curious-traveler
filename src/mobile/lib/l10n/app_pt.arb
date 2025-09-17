@@ -101,5 +101,7 @@
   "homeLocationFound": "Localização encontrada",
   "homeLocationError": "Não foi possível detectar a localização",
   "homeLocationRetry": "Tentar novamente",
+  "homeTitleStartOfJourney": "Início da jornada",
+  "homeTitleEndOfJourney": "Final da jornada",
   "mapLoadingText": "Carregando mapa..."
 }

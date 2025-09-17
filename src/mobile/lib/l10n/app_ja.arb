@@ -101,5 +101,7 @@
   "homeLocationFound": "位置が見つかりました",
   "homeLocationError": "位置を検出できません",
   "homeLocationRetry": "再試行",
+  "homeTitleStartOfJourney": "旅の始まり",
+  "homeTitleEndOfJourney": "旅の終わり",
   "mapLoadingText": "マップを読み込み中..."
 }

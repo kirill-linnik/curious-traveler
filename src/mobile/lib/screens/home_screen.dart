@@ -6,10 +6,11 @@ import '../models/itinerary_models.dart';
 import '../models/location_models.dart';
 import '../providers/itinerary_provider.dart';
 import '../providers/enhanced_location_provider.dart';
+import '../services/api_service.dart';
 import '../viewmodels/home_location_vm.dart';
 import '../widgets/interest_selector.dart';
 import '../widgets/commute_selector.dart';
-import '../widgets/location_mode_toggle.dart';
+import '../widgets/segmented_toggle.dart';
 import '../widgets/location_search_input.dart';
 import '../widgets/info_banner.dart';
 
@@ -26,16 +27,14 @@ class _HomeScreenState extends State<HomeScreen> {
   List<String> _selectedInterests = [];
   String _language = 'en-US';
   
-  // Use HomeLocationVm for deterministic location state management
+  // Use new dual-block HomeLocationVm
   late final HomeLocationVm _locationVm;
   
   EnhancedLocationProvider? _locationProvider;
+  ApiService? _apiService;
   
   // Track if we've performed initial location detection
   bool _hasInitializedLocation = false;
-  
-  // Track last searched query to prevent circular calls
-  String _lastSearchedQuery = '';
 
   @override
   void initState() {
@@ -47,7 +46,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _locationProvider?.removeListener(_handleLocationProviderChanges);
-    _locationVm.removeListener(_handleViewModelChanges);
     _locationVm.dispose();
     super.dispose();
   }
@@ -56,9 +54,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     
-    // Initialize current location detection on home screen load (one-shot)
+    // Initialize services and providers on home screen load (one-shot)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _locationProvider = context.read<EnhancedLocationProvider>();
+      _apiService = context.read<ApiService>();
+      
+      // Set the API service in the VM
+      _locationVm.setApiService(_apiService!);
       
       // Only detect location once per Home screen instance
       if (!_hasInitializedLocation) {
@@ -68,9 +70,6 @@ class _HomeScreenState extends State<HomeScreen> {
       
       // Add listener to handle location provider changes
       _locationProvider!.addListener(_handleLocationProviderChanges);
-      
-      // Add listener to handle ViewModel changes (for search)
-      _locationVm.addListener(_handleViewModelChanges);
     });
   }
 
@@ -80,15 +79,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // Guard clause for safety
     if (locationProvider == null || !mounted) return;
 
-    // Let the ViewModel handle provider changes
+    // Let the ViewModel handle provider changes for legacy compatibility
     _locationVm.handleProviderChange(locationProvider);
-
-    // Sync search results from provider to ViewModel
-    if (locationProvider.status == LocationStatus.searchComplete) {
-      _locationVm.updateSearchResults(locationProvider.searchResults);
-    } else if (locationProvider.status == LocationStatus.unknown) {
-      _locationVm.updateSearchResults([]);
-    }
 
     // Show info banners based on location status changes
     switch (locationProvider.status) {
@@ -96,9 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
         InfoBannerService.showLocationDetecting(context);
         break;
       case LocationStatus.detected:
-      case LocationStatus.searchComplete:
         // Only show "Location found" banner for GPS detection (current location mode)
-        // Don't show it for manual location searches in "another location" mode
         if (locationProvider.mode == LocationMode.currentLocation) {
           InfoBannerService.showLocationFound(context);
         }
@@ -108,29 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       default:
         break;
-    }
-  }
-
-  void _handleViewModelChanges() {
-    final locationProvider = _locationProvider;
-    
-    // Guard clause for safety
-    if (locationProvider == null || !mounted) return;
-
-    // Trigger search when queryText changes in "Another Location" mode
-    if (_locationVm.locationSource == LocationMode.anotherLocation) {
-      final queryText = _locationVm.queryText;
-      
-      // Only trigger search if query has actually changed
-      if (queryText != _lastSearchedQuery) {
-        _lastSearchedQuery = queryText;
-        
-        if (queryText.isEmpty) {
-          locationProvider.clearSearch();
-        } else {
-          locationProvider.searchLocations(queryText);
-        }
-      }
     }
   }
 
@@ -150,49 +117,13 @@ class _HomeScreenState extends State<HomeScreen> {
     await prefs.setStringList('interests', _selectedInterests);
   }
 
-
-
-  void _handleModeChanged(LocationMode mode) {
-    final provider = context.read<EnhancedLocationProvider>();
-    
-    // Use ViewModel for race-free mode changes and text updates
-    _locationVm.handleModeChanged(mode);
-    
-    // Set the mode in the provider
-    provider.setMode(mode);
-    
-    if (mode == LocationMode.currentLocation) {
-      // When switching to Current location, ViewModel handles text update
-      // Update selected location in provider to match current location snapshot
-      if (provider.currentLocation != null && _locationVm.currentLocationSnapshot != null) {
-        final snapshot = _locationVm.currentLocationSnapshot!;
-        // Create a LocationSearchResult from the current location
-        final currentResult = LocationSearchResult(
-          id: 'current_location',
-          type: 'Current',
-          name: snapshot.displayText,
-          formattedAddress: snapshot.displayText,
-          locality: snapshot.locality ?? '',
-          countryCode: '',
-          latitude: snapshot.position?.latitude ?? 0.0,
-          longitude: snapshot.position?.longitude ?? 0.0,
-          confidence: 'high',
-        );
-        provider.selectLocation(currentResult);
-      }
-    } else if (mode == LocationMode.anotherLocation) {
-      // When switching to Another location, ViewModel handles clearing
-      provider.clearSearch();
-    }
-  }
-
-
-
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.appTitle),
+        title: Text(localizations.appTitle),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
@@ -211,12 +142,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          AppLocalizations.of(context)!.welcomeTitle,
+                          localizations.welcomeTitle,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          AppLocalizations.of(context)!.welcomeDescription,
+                          localizations.welcomeDescription,
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ],
@@ -225,22 +156,84 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Location Mode Toggle
-                LocationModeToggle(
-                  mode: locationProvider.mode,
-                  onChanged: _handleModeChanged,
+                // START OF JOURNEY BLOCK
+                Text(
+                  localizations.homeTitleStartOfJourney,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                
+                ListenableBuilder(
+                  listenable: _locationVm.start,
+                  builder: (context, _) {
+                    return SegmentedToggle(
+                      value: _locationVm.start.mode,
+                      onChanged: (mode) => _locationVm.start.setMode(
+                        mode,
+                        currentSnapshot: _locationVm.currentLocationSnapshot,
+                      ),
+                      labels: [
+                        localizations.homeToggleCurrentLocation,
+                        localizations.homeToggleAnotherLocation,
+                      ],
+                    );
+                  },
                 ),
                 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 
-                // Location Input Field
-                LocationSearchInput(
-                  viewModel: _locationVm,
-                  searchResults: locationProvider.searchResults,
-                  status: locationProvider.status,
-                  error: locationProvider.error,
-                  enabled: locationProvider.mode == LocationMode.anotherLocation ||
-                           locationProvider.status == LocationStatus.failed,
+                ListenableBuilder(
+                  listenable: _locationVm.start,
+                  builder: (context, _) {
+                    return LocationSearchInput(
+                      endpointState: _locationVm.start,
+                      enabled: _locationVm.start.mode == LocationMode.anotherLocation,
+                      onSearch: _locationVm.searchLocations,
+                      onSuggestionTap: (selection, ctx) => 
+                          _locationVm.start.onSuggestionSelected(selection, ctx),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // END OF JOURNEY BLOCK
+                Text(
+                  localizations.homeTitleEndOfJourney,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                
+                ListenableBuilder(
+                  listenable: _locationVm.end,
+                  builder: (context, _) {
+                    return SegmentedToggle(
+                      value: _locationVm.end.mode,
+                      onChanged: (mode) => _locationVm.end.setMode(
+                        mode,
+                        currentSnapshot: _locationVm.currentLocationSnapshot,
+                      ),
+                      labels: [
+                        localizations.homeToggleCurrentLocation,
+                        localizations.homeToggleAnotherLocation,
+                      ],
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 12),
+                
+                ListenableBuilder(
+                  listenable: _locationVm.end,
+                  builder: (context, _) {
+                    return LocationSearchInput(
+                      endpointState: _locationVm.end,
+                      enabled: _locationVm.end.mode == LocationMode.anotherLocation,
+                      onSearch: _locationVm.searchLocations,
+                      onSuggestionTap: (selection, ctx) => 
+                          _locationVm.end.onSuggestionSelected(selection, ctx),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 32),
@@ -253,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          AppLocalizations.of(context)!.whatInterestsYou,
+                          localizations.whatInterestsYou,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 16),
@@ -281,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          AppLocalizations.of(context)!.howWillYouGetAround,
+                          localizations.howWillYouGetAround,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 16),
@@ -303,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Generate Button
                 ElevatedButton(
-                  onPressed: _canGenerate(locationProvider) ? () => _generateItinerary(itineraryProvider, locationProvider) : null,
+                  onPressed: _canGenerate() ? () => _generateItinerary(itineraryProvider) : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -311,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: itineraryProvider.isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(AppLocalizations.of(context)!.generateItinerary),
+                      : Text(localizations.generateItinerary),
                 ),
               ],
             ),
@@ -321,48 +314,42 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  bool _canGenerate(EnhancedLocationProvider locationProvider) {
+  bool _canGenerate() {
     return _selectedInterests.isNotEmpty && 
            _duration > 0 &&
-           (locationProvider.mode == LocationMode.currentLocation
-               ? locationProvider.currentLocation != null
-               : _locationVm.locationController.text.isNotEmpty);
+           _locationVm.hasStartPoint &&
+           _locationVm.hasEndPoint;
   }
 
-  void _generateItinerary(ItineraryProvider itineraryProvider, EnhancedLocationProvider locationProvider) async {
+  void _generateItinerary(ItineraryProvider itineraryProvider) async {
     // Dismiss any existing banners first
     InfoBannerService.dismiss();
     
     try {
-      LocationSearchResult? targetLocation;
-      
-      if (locationProvider.mode == LocationMode.currentLocation) {
-        final currentLocation = locationProvider.currentLocation;
-        if (currentLocation != null) {
-          targetLocation = LocationSearchResult(
-            id: 'current_location',
-            type: 'Current',
-            name: 'Current Location',
-            formattedAddress: currentLocation.address,
-            locality: '',
-            countryCode: '',
-            latitude: currentLocation.latitude,
-            longitude: currentLocation.longitude,
-            confidence: 'high',
-          );
-        }
-      } else {
-        targetLocation = locationProvider.selectedLocation;
-      }
-      
-      if (targetLocation == null) {
+      // For now, use the start location as the target for itinerary generation
+      // In the future, this will be updated to use both start and end coordinates
+      final startCoords = _locationVm.startCoords;
+      if (startCoords == null) {
         InfoBannerService.show(
           context: context,
-          message: 'Please enter a location',
+          message: 'Please select a start location',
           type: InfoBannerType.error,
         );
         return;
       }
+
+      // Create a dummy location result for the current API
+      final targetLocation = LocationSearchResult(
+        id: 'start_location',
+        type: 'Location',
+        name: 'Start Location',
+        formattedAddress: _locationVm.start.displayText,
+        locality: '',
+        countryCode: '',
+        latitude: startCoords.lat,
+        longitude: startCoords.lon,
+        confidence: 'high',
+      );
 
       await itineraryProvider.generateItinerary(
         city: targetLocation.name,

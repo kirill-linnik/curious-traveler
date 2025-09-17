@@ -101,5 +101,7 @@
   "homeLocationFound": "已找到位置",
   "homeLocationError": "无法检测位置",
   "homeLocationRetry": "重试",
+  "homeTitleStartOfJourney": "旅程开始",
+  "homeTitleEndOfJourney": "旅程结束",
   "mapLoadingText": "地图加载中..."
 }

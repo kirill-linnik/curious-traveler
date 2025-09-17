@@ -8,11 +8,13 @@ import 'package:curious_traveler/screens/home_screen.dart';
 import 'package:curious_traveler/providers/itinerary_provider.dart';
 import 'package:curious_traveler/providers/enhanced_location_provider.dart';
 import 'package:curious_traveler/providers/audio_provider.dart';
+import 'package:curious_traveler/services/api_service.dart';
 import 'package:curious_traveler/widgets/location_search_input.dart';
 import 'package:curious_traveler/providers/locale_provider.dart';
 import 'package:curious_traveler/models/itinerary_models.dart';
 import 'package:curious_traveler/models/location_models.dart';
 import 'package:curious_traveler/l10n/app_localizations.dart';
+import '../helpers/mock_api_service.dart';
 
 class MockItineraryProvider extends Mock implements ItineraryProvider {}
 class MockEnhancedLocationProvider extends Mock implements EnhancedLocationProvider {}
@@ -37,6 +39,7 @@ void main() {
     late MockAudioProvider mockAudioProvider;
     late MockLocaleProvider mockLocaleProvider;
     late MockSharedPreferences mockSharedPreferences;
+    late MockApiService mockApiService;
 
     setUp(() {
       mockItineraryProvider = MockItineraryProvider();
@@ -44,6 +47,7 @@ void main() {
       mockAudioProvider = MockAudioProvider();
       mockLocaleProvider = MockLocaleProvider();
       mockSharedPreferences = MockSharedPreferences();
+      mockApiService = MockApiService();
 
       // Setup default mock returns for EnhancedLocationProvider
       when(() => mockLocationProvider.mode).thenReturn(LocationMode.currentLocation);
@@ -81,6 +85,7 @@ void main() {
             ChangeNotifierProvider<AudioProvider>.value(value: mockAudioProvider),
             ChangeNotifierProvider<LocaleProvider>.value(value: mockLocaleProvider),
             Provider<SharedPreferences>.value(value: mockSharedPreferences),
+            Provider<ApiService>.value(value: mockApiService),
           ],
           child: const HomeScreen(),
         ),
@@ -127,7 +132,7 @@ void main() {
 
       // Assert - HomeScreen should still render properly even with an error
       // Errors are handled through InfoBannerService overlays, not direct text display
-      expect(find.byType(LocationSearchInput), findsOneWidget);
+      expect(find.byType(LocationSearchInput), findsNWidgets(2)); // Start and End blocks
       expect(find.text('Generate Itinerary'), findsOneWidget);
     });
 
@@ -242,6 +247,7 @@ void main() {
             ChangeNotifierProvider<AudioProvider>.value(value: mockAudioProvider),
             ChangeNotifierProvider<LocaleProvider>.value(value: mockLocaleProvider),
             Provider<SharedPreferences>.value(value: mockSharedPreferences),
+            Provider<ApiService>.value(value: mockApiService),
           ],
           child: const HomeScreen(),
         ),
@@ -281,6 +287,7 @@ void main() {
             ChangeNotifierProvider<AudioProvider>.value(value: mockAudioProvider),
             ChangeNotifierProvider<LocaleProvider>.value(value: mockLocaleProvider),
             Provider<SharedPreferences>.value(value: mockSharedPreferences),
+            Provider<ApiService>.value(value: mockApiService),
           ],
           child: const HomeScreen(),
         ),

@@ -1,0 +1,244 @@
+# ===============================================
+# Curious Traveler - Comprehensive .gitignore
+# ===============================================
+# This file prevents sensitive data, build artifacts,
+# and temporary files from being committed to git.
+
+# ============== SENSITIVE DATA ================
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+.env.local
+.env.test
+
+# Azure configuration secrets
+.azure/
+!.azure/dev/.env
+local.settings.json
+
+# ASP.NET Core secrets
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.json
+!appsettings.json
+
+# ============== LOGS & DEPLOYMENTS ============
+# Azure deployment logs (contain sensitive information)
+app_logs/
+app_logs_new/
+latest_logs/
+newest_logs/
+fixed_logs.zip
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Temporary zip files
+*.zip
+!**/gradle-wrapper-*.jar
+
+# ============== .NET BUILD ARTIFACTS ==========
+# Build results
+bin/
+obj/
+out/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+build/
+
+# MSBuild logs
+msbuild.log
+msbuild.err
+msbuild.wrn
+*.log
+
+# .NET artifacts
+*.swp
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+nupkg/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ============== FLUTTER/DART ==================
+# Dart/Flutter build artifacts
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+.flutter-plugins-dependencies
+/build/
+**/build/
+/coverage/
+
+# Generated files
+*.g.dart
+*.mocks.dart
+*.config.dart
+
+# Flutter specific
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+.packages
+pubspec.lock
+
+# iOS Flutter artifacts
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# ============== ANDROID ======================
+# Android build artifacts
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+**/android/app/debug
+**/android/app/profile  
+**/android/app/release
+**/android/.cxx/
+
+# Android signing keys (CRITICAL - NEVER COMMIT!)
+*.jks
+*.keystore
+key.properties
+upload-keystore.jks
+
+# ============== iOS ==========================
+# iOS build artifacts  
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*sync/
+**/ios/**/.sconsign.dblite
+**/ios/**/.tags*
+**/ios/**/.vagrant/
+**/ios/**/DerivedData/
+**/ios/**/Icon?
+**/ios/**/Pods/
+**/ios/**/.symlinks/
+**/ios/**/profile
+**/ios/**/xcuserdata
+**/ios/.generated/
+
+# iOS certificates (CRITICAL - NEVER COMMIT!)
+**/ios/**/*.p12
+**/ios/**/*.cer
+**/ios/**/*.mobileprovision
+
+# ============== DEVELOPMENT TOOLS =============
+# IDEs and editors
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.atom/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ============== NODE.JS ======================
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# npm cache
+.npm
+.eslintcache
+
+# Build caches
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# REPL history
+.node_repl_history
+
+# Package files
+*.tgz
+.yarn-integrity
+
+# ============== WEB BUILD TOOLS ===============
+# Parcel, Next.js, Nuxt, Gatsby
+.cache
+.parcel-cache
+.next
+.nuxt
+dist
+.cache/
+public
+.vuepress/dist
+
+# ============== CLOUD & SERVERLESS ============
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+
+# ============== TESTING & COVERAGE ============
+coverage/
+.nyc_output
+*.lcov
+.coverage
+app.*.symbols
+app.*.map.json
+
+# ============== EXCEPTIONS ====================
+# Files that should be included despite patterns above
+!**/ios/**/default.mode1v3
+!**/ios/**/default.mode2v3  
+!**/ios/**/default.pbxuser
+!**/ios/**/default.perspectivev3
+!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+!/dev/ci/**/Gemfile.lock
+!.azure/dev/.env

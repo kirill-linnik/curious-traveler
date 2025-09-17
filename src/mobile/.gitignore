@@ -1,0 +1,165 @@
+# ===============================================
+# Curious Traveler Mobile - Flutter .gitignore
+# ===============================================
+
+# ============== FLUTTER/DART ==================
+# Dart/Flutter build artifacts
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+build/
+coverage/
+
+# Generated files (auto-generated code)
+*.g.dart
+*.mocks.dart
+*.config.dart
+**/*.g.dart
+**/*.mocks.dart
+
+# Flutter specific files
+.flutter-plugins-dependencies
+pubspec.lock
+
+# ============== MOBILE BUILD ARTIFACTS ========
+# General build directories
+/build/
+**/build/
+
+# Android build artifacts
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+/android/.gradle/
+/android/captures/
+/android/local.properties
+/android/key.properties
+android/app/release/
+android/gradle/
+**/GeneratedPluginRegistrant.java
+
+# iOS build artifacts
+/ios/Flutter/.last_build_id
+/ios/Flutter/App.framework/
+/ios/Flutter/Flutter.framework/
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/app.flx
+/ios/Flutter/app.zip
+/ios/Flutter/flutter_assets/
+/ios/Flutter/flutter_export_environment.sh
+/ios/ServiceDefinitions.json
+/ios/Runner/GeneratedPluginRegistrant.*
+/ios/DerivedData/
+/ios/Pods/
+/ios/.symlinks/
+
+# ============== SECURITY CRITICAL ==============
+# Signing keys (NEVER COMMIT THESE!)
+**/*.jks
+**/*.keystore
+**/key.properties
+**/upload-keystore.jks
+**/android/key.properties
+
+# iOS certificates and provisioning profiles
+**/*.p12
+**/*.cer
+**/*.mobileprovision
+
+# ============== CONFIGURATION ==================
+# Local configuration that might contain secrets
+lib/config/local_config.dart
+lib/config/secrets.dart
+.env
+.env.local
+
+# ============== DEVELOPMENT TOOLS ==============
+# IDEs and editors
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.atom/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# ============== SYSTEM FILES ===================
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.log
+*.pyc
+*.swp
+*.class
+
+# ============== TEST ARTIFACTS =================
+# Test coverage reports
+coverage/
+test/coverage/
+.lcov
+
+# Test artifacts
+**/test/.test_coverage.dart
+**/test/coverage_helper_test.dart
+
+# ============== LOCALIZATION ===================
+# Generated localization files (keep source .arb files)
+.dart_tool/flutter_gen/
+lib/generated/
+**/l10n/app_localizations*.dart
+!**/l10n/app_*.arb
+
+# ============== CACHE & TEMPORARY ==============
+# Flutter caches
+.flutter-plugins-dependencies
+.flutter-plugins
+
+# Temporary files
+*.tmp
+*.temp
+.build/
+
+# Documentation
+doc/api/
+
+# ============== ANALYTICS & MONITORING =========
+# Firebase local files
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# Google Services (keep template, ignore with real keys)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+ios/firebase_app_id_file.json
+
+# Crashlytics
+**/crashlytics-build.properties
+**/fabric.properties
+
+# ============== DEBUGGING ======================
+# Symbol files
+app.*.symbols
+app.*.map.json
+
+# Obfuscation related
+app.*.map.json
+
+# ============== EXCEPTIONS =====================
+# Keep these files despite the patterns above
+!android/gradle/wrapper/gradle-wrapper.properties
+!android/gradle/wrapper/gradle-wrapper.jar
+!**/lib/l10n/app_*.arb

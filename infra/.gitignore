@@ -1,0 +1,82 @@
+# ===============================================
+# Infrastructure (Bicep) - .gitignore for Curious Traveler
+# ===============================================
+
+# ============== BICEP BUILD ARTIFACTS ==========
+# Compiled ARM templates
+*.json
+!main.parameters.json
+!main.bicepparam
+
+# Bicep build cache
+.bicep/
+
+# ============== AZURE DEPLOYMENT ==============
+# Azure CLI output
+deployment-outputs.json
+arm-outputs.json
+
+# Deployment logs
+deploy.log
+deployment.log
+
+# ============== SENSITIVE DATA =================
+# Parameter files with secrets (keep template versions)
+*.parameters.dev.json
+*.parameters.prod.json
+*.parameters.local.json
+*parameters*.secret.json
+
+# Environment-specific configurations
+.env
+.env.*
+!.env.example
+
+# ============== DEVELOPMENT TOOLS ==============
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# ============== TEMPORARY FILES ================
+# Temporary Bicep files
+*.bicep.tmp
+*.tmp
+
+# Backup files
+*.bak
+*.backup
+
+# ============== AZURE RESOURCE MANAGER =========
+# ARM template outputs
+deploymentTemplate.json
+template.json
+parameters.json
+
+# Deployment artifacts
+deployment-artifacts/
+
+# ============== LOGS ========================
+# Build and deployment logs
+*.log
+logs/
+
+# ============== TESTING =====================
+# Test outputs
+test-results/
+test-outputs/
+
+# ============== DOCUMENTATION ===============
+# Generated documentation
+docs/generated/
+
+# ============== EXCEPTIONS ==================
+# Keep these specific files
+!main.bicep
+!main.parameters.json
+!main.bicepparam
+!*.bicep
+!README.md

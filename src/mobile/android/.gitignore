@@ -1,0 +1,109 @@
+# ===============================================
+# Android-specific .gitignore for Curious Traveler
+# ===============================================
+
+# ============== GRADLE BUILD ARTIFACTS ========
+gradle-wrapper.jar
+/.gradle
+/local.properties
+/.cxx/
+/captures/
+/buildOutputs.json
+
+# Gradle scripts (regenerated, but keep wrapper properties)
+/gradlew
+/gradlew.bat
+
+# ============== SECURITY CRITICAL ==============
+# NEVER COMMIT THESE - App signing keys and certificates
+key.properties
+**/*.keystore
+**/*.jks
+upload-keystore.jks
+release.keystore
+debug.keystore
+
+# Google services configuration (contains API keys)
+google-services.json
+
+# Firebase configuration
+firebase_app_id_file.json
+
+# NDK debug symbols
+obj/
+
+# ============== ANDROID BUILD OUTPUTS ==========
+# Build directories
+/build/
+*/build/
+app/build/
+app/release/
+app/debug/
+app/profile/
+
+# Generated files
+GeneratedPluginRegistrant.java
+**/GeneratedPluginRegistrant.java
+
+# APK files (unless you want to track releases)
+*.apk
+*.aab
+
+# ============== ANDROID STUDIO & INTELLIJ ======
+# User-specific configurations
+/.idea/
+.idea/
+*.iml
+local.properties
+
+# Android Studio workspace files
+.gradle/
+.navigation/
+captures/
+
+# ============== NDK & CMAKE ===================
+# NDK
+obj/
+.externalNativeBuild/
+.cxx/
+
+# CMake
+cmake-build-*/
+
+# ============== LINT & ANALYSIS ===============
+# Lint reports
+lint-results*.xml
+lint-results*.html
+
+# ProGuard
+proguard/
+
+# ============== TESTING =======================
+# Test outputs
+androidTest-results/
+test-results/
+
+# Coverage reports
+jacoco/
+coverage/
+
+# ============== LOGS & DEBUGGING ==============
+# Android logs
+*.log
+
+# Memory dumps
+*.hprof
+
+# ============== FIREBASE & ANALYTICS ==========
+# Firebase debug logs
+firebase-debug.log
+firebase-debug.*.log
+
+# Crashlytics
+crashlytics-build.properties
+fabric.properties
+
+# ============== EXCEPTIONS ====================
+# Keep these files despite patterns above
+!gradle/wrapper/gradle-wrapper.properties
+!gradle/wrapper/gradle-wrapper.jar

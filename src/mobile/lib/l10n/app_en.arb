@@ -1,0 +1,487 @@
+{
+  "@@locale": "en",
+  "appTitle": "Curious Traveler",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "tabExplore": "Explore",
+  "@tabExplore": {
+    "description": "Tab label for the explore screen"
+  },
+  "tabItinerary": "Itinerary",
+  "@tabItinerary": {
+    "description": "Tab label for the itinerary screen"
+  },
+  "tabSettings": "Settings",
+  "@tabSettings": {
+    "description": "Tab label for the settings screen"
+  },
+  "cityToExplore": "City to explore",
+  "@cityToExplore": {
+    "description": "Label for city input field"
+  },
+  "generateItinerary": "Generate Itinerary",
+  "@generateItinerary": {
+    "description": "Button text to generate an itinerary"
+  },
+  "generating": "Generating...",
+  "@generating": {
+    "description": "Loading text while generating content"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Button text to retry an action"
+  },
+  "dismiss": "Dismiss",
+  "@dismiss": {
+    "description": "Button text to dismiss a dialog or error"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Button text to cancel an action"
+  },
+  "close": "Close",
+  "@close": {
+    "description": "Button text to close a dialog"
+  },
+  "clear": "Clear",
+  "@clear": {
+    "description": "Button text to clear data"
+  },
+  "durationHours": "Duration: {hours} hours",
+  "@durationHours": {
+    "description": "Duration display with hours",
+    "placeholders": {
+      "hours": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "defaultDurationHours": "Default Duration: {hours} hours",
+  "@defaultDurationHours": {
+    "description": "Default duration setting display",
+    "placeholders": {
+      "hours": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "itineraryGenerated": "Itinerary generated! Check the Itinerary tab.",
+  "@itineraryGenerated": {
+    "description": "Success message when itinerary is generated"
+  },
+  "yourItinerary": "Your Itinerary",
+  "@yourItinerary": {
+    "description": "Title of the itinerary screen"
+  },
+  "listView": "List",
+  "@listView": {
+    "description": "Tab label for list view"
+  },
+  "mapView": "Map",
+  "@mapView": {
+    "description": "Tab label for map view"
+  },
+  "noItineraryYet": "No itinerary yet",
+  "@noItineraryYet": {
+    "description": "Message when no itinerary is available"
+  },
+  "generateFromExploreTab": "Generate one from the Explore tab",
+  "@generateFromExploreTab": {
+    "description": "Instruction message for generating itinerary"
+  },
+  "noLocationsToDisplay": "No locations to display",
+  "@noLocationsToDisplay": {
+    "description": "Message when no locations are available"
+  },
+  "minutesDuration": "{minutes} minutes",
+  "@minutesDuration": {
+    "description": "Duration in minutes",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "playNarration": "Play Narration",
+  "@playNarration": {
+    "description": "Button text to play audio narration"
+  },
+  "failedToPlayNarration": "Failed to play narration: {error}",
+  "@failedToPlayNarration": {
+    "description": "Error message when narration fails to play",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Network error"
+      }
+    }
+  },
+  "itineraryUpdated": "Itinerary updated based on your feedback!",
+  "@itineraryUpdated": {
+    "description": "Success message when itinerary is updated"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Title of the settings screen"
+  },
+  "languageAndRegion": "Language & Region",
+  "@languageAndRegion": {
+    "description": "Section title for language settings"
+  },
+  "narrationLanguage": "Narration Language",
+  "@narrationLanguage": {
+    "description": "Label for language selection"
+  },
+  "defaultPreferences": "Default Preferences",
+  "@defaultPreferences": {
+    "description": "Section title for default settings"
+  },
+  "about": "About",
+  "@about": {
+    "description": "Section title for app information"
+  },
+  "version": "Version",
+  "@version": {
+    "description": "Label for app version"
+  },
+  "privacyPolicy": "Privacy Policy",
+  "@privacyPolicy": {
+    "description": "Label for privacy policy"
+  },
+  "helpAndSupport": "Help & Support",
+  "@helpAndSupport": {
+    "description": "Label for help and support"
+  },
+  "dataAndStorage": "Data & Storage",
+  "@dataAndStorage": {
+    "description": "Section title for data settings"
+  },
+  "clearCachedData": "Clear Cached Data",
+  "@clearCachedData": {
+    "description": "Option to clear cached data"
+  },
+  "removeCachedDataDescription": "Remove downloaded audio and preferences",
+  "@removeCachedDataDescription": {
+    "description": "Description for clearing cached data"
+  },
+  "clearData": "Clear Data",
+  "@clearData": {
+    "description": "Dialog title for clearing data"
+  },
+  "dataClearedSuccessfully": "Data cleared successfully",
+  "@dataClearedSuccessfully": {
+    "description": "Success message after clearing data"
+  },
+  "commuteWalking": "Walking",
+  "@commuteWalking": {
+    "description": "Walking commute style"
+  },
+  "commuteTransit": "Public Transit",
+  "@commuteTransit": {
+    "description": "Public transit commute style"
+  },
+  "commuteDriving": "Driving",
+  "@commuteDriving": {
+    "description": "Driving commute style"
+  },
+  "feedbackLike": "Like",
+  "@feedbackLike": {
+    "description": "Like feedback option"
+  },
+  "feedbackDislike": "Dislike",
+  "@feedbackDislike": {
+    "description": "Dislike feedback option"
+  },
+  "feedbackMoreTime": "More Time",
+  "@feedbackMoreTime": {
+    "description": "More time feedback option"
+  },
+  "feedbackLessTime": "Less Time",
+  "@feedbackLessTime": {
+    "description": "Less time feedback option"
+  },
+  "interestHistory": "History",
+  "@interestHistory": {
+    "description": "History interest category"
+  },
+  "interestArt": "Art",
+  "@interestArt": {
+    "description": "Art interest category"
+  },
+  "interestFood": "Food",
+  "@interestFood": {
+    "description": "Food interest category"
+  },
+  "interestShopping": "Shopping",
+  "@interestShopping": {
+    "description": "Shopping interest category"
+  },
+  "interestNature": "Nature",
+  "@interestNature": {
+    "description": "Nature interest category"
+  },
+  "interestArchitecture": "Architecture",
+  "@interestArchitecture": {
+    "description": "Architecture interest category"
+  },
+  "interestNightlife": "Nightlife",
+  "@interestNightlife": {
+    "description": "Nightlife interest category"
+  },
+  "languageEnglishUS": "English",
+  "@languageEnglishUS": {
+    "description": "English language option"
+  },
+  "languageSpanish": "Spanish",
+  "@languageSpanish": {
+    "description": "Spanish language option"
+  },
+  "languageFrench": "French",
+  "@languageFrench": {
+    "description": "French language option"
+  },
+  "languageGerman": "German",
+  "@languageGerman": {
+    "description": "German language option"
+  },
+  "languageItalian": "Italian",
+  "@languageItalian": {
+    "description": "Italian language option"
+  },
+  "languagePortuguese": "Portuguese",
+  "@languagePortuguese": {
+    "description": "Portuguese language option"
+  },
+  "languageChineseSimplified": "Chinese (Simplified)",
+  "@languageChineseSimplified": {
+    "description": "Chinese (Simplified) language option"
+  },
+  "languageJapanese": "Japanese",
+  "@languageJapanese": {
+    "description": "Japanese language option"
+  },
+  "languageKorean": "Korean",
+  "@languageKorean": {
+    "description": "Korean language option"
+  },
+  "languageRussian": "Russian",
+  "@languageRussian": {
+    "description": "Russian language option"
+  },
+  "travelTimeMinutes": "{minutes} min travel",
+  "@travelTimeMinutes": {
+    "description": "Travel time display",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "15"
+      }
+    }
+  },
+  "locationDurationMinutes": "{minutes} min",
+  "@locationDurationMinutes": {
+    "description": "Location duration display",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "errorApiServiceNotInitialized": "API service not initialized",
+  "@errorApiServiceNotInitialized": {
+    "description": "Error when API service is not initialized"
+  },
+  "errorLocationServicesDisabled": "Location services are disabled",
+  "@errorLocationServicesDisabled": {
+    "description": "Error when location services are disabled"
+  },
+  "errorLocationPermissionsDenied": "Location permissions are denied",
+  "@errorLocationPermissionsDenied": {
+    "description": "Error when location permissions are denied"
+  },
+  "errorLocationPermissionsPermanentlyDenied": "Location permissions are permanently denied",
+  "@errorLocationPermissionsPermanentlyDenied": {
+    "description": "Error when location permissions are permanently denied"
+  },
+  "errorItineraryNotFound": "Itinerary not found",
+  "@errorItineraryNotFound": {
+    "description": "Error when itinerary is not found"
+  },
+  "privacyPolicyContent": "Curious Traveler respects your privacy. This app:\n\n• Uses your location only to enhance itinerary recommendations\n• Stores preferences locally on your device\n• Does not collect personal data\n• Uses Azure AI services for itinerary generation and speech synthesis\n• Requires internet connection for core functionality\n\nLocation data is used only during app usage and is not stored permanently.",
+  "@privacyPolicyContent": {
+    "description": "Privacy policy content text"
+  },
+  "helpContent": "How to use Curious Traveler:\n\n1. Enter a city you want to explore\n2. Choose your preferred commute style\n3. Set the duration for your exploration\n4. Select your interests\n5. Generate your personalized itinerary\n6. Use the map or list view to navigate\n7. Tap locations for audio narration\n8. Provide feedback to improve recommendations\n\nTips:\n• Allow location access for better recommendations\n• Use headphones for the best audio experience\n• Provide feedback to get personalized updates",
+  "@helpContent": {
+    "description": "Help and support content text"
+  },
+  "clearDataDialogContent": "This will remove all cached audio files and reset your preferences. Are you sure you want to continue?",
+  "@clearDataDialogContent": {
+    "description": "Clear data dialog warning message"
+  },
+  "welcomeTitle": "Welcome to Curious Traveler!",
+  "@welcomeTitle": {
+    "description": "Welcome title on home screen"
+  },
+  "welcomeDescription": "Discover personalized city experiences with AI-powered itineraries and audio narration.",
+  "@welcomeDescription": {
+    "description": "Welcome description on home screen"
+  },
+  "cityHint": "e.g., Paris, New York, Tokyo",
+  "@cityHint": {
+    "description": "Hint text for city input field"
+  },
+  "currentLocation": "Current location: {address}",
+  "@currentLocation": {
+    "description": "Current location display",
+    "placeholders": {
+      "address": {
+        "type": "String",
+        "example": "San Francisco, CA"
+      }
+    }
+  },
+  "locationError": "Location: {error}",
+  "@locationError": {
+    "description": "Location error message",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Unable to get location"
+      }
+    }
+  },
+  "howWillYouGetAround": "How will you get around?",
+  "@howWillYouGetAround": {
+    "description": "Question for commute style selection"
+  },
+  "whatInterestsYou": "What interests you?",
+  "@whatInterestsYou": {
+    "description": "Question for interest selection"
+  },
+  "pleaseSelectAtLeastOneInterest": "Please select at least one interest",
+  "@pleaseSelectAtLeastOneInterest": {
+    "description": "Validation message for interest selection"
+  },
+  "interestCulture": "Culture",
+  "@interestCulture": {
+    "description": "Culture interest category"
+  },
+  "interestSports": "Sports",
+  "@interestSports": {
+    "description": "Sports interest category"
+  },
+  "interestMusic": "Music",
+  "@interestMusic": {
+    "description": "Music interest category"
+  },
+  "interestPhotography": "Photography",
+  "@interestPhotography": {
+    "description": "Photography interest category"
+  },
+  "interestMarkets": "Markets",
+  "@interestMarkets": {
+    "description": "Markets interest category"
+  },
+  "locationsCount": "{count} locations",
+  "@locationsCount": {
+    "description": "Number of locations in itinerary",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "totalTimeDisplay": "{hours}h {minutes}m total",
+  "@totalTimeDisplay": {
+    "description": "Total time display for itinerary",
+    "placeholders": {
+      "hours": {
+        "type": "int",
+        "example": "3"
+      },
+      "minutes": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "howWasLocation": "How was {locationName}?",
+  "@howWasLocation": {
+    "description": "Feedback question for location",
+    "placeholders": {
+      "locationName": {
+        "type": "String",
+        "example": "Central Park"
+      }
+    }
+  },
+  "locationMinutes": "{minutes} minutes",
+  "@locationMinutes": {
+    "description": "Duration in minutes for location details",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "45"
+      }
+    }
+  },
+  "homeToggleCurrentLocation": "Current location",
+  "@homeToggleCurrentLocation": {
+    "description": "Toggle option for using current GPS location"
+  },
+  "homeToggleAnotherLocation": "Another location",
+  "@homeToggleAnotherLocation": {
+    "description": "Toggle option for entering a different location"
+  },
+  "homeInputLabel": "Location",
+  "@homeInputLabel": {
+    "description": "Label for the location input field"
+  },
+  "homeInputPlaceholder": "Enter a city, address, or place",
+  "@homeInputPlaceholder": {
+    "description": "Placeholder text for the location input field"
+  },
+  "homeHintCouldNotDetect": "Could not detect your location. Please enter a city or address.",
+  "@homeHintCouldNotDetect": {
+    "description": "Hint message when GPS location detection fails"
+  },
+  "homeSearchNoResults": "No results. Try refining your query.",
+  "@homeSearchNoResults": {
+    "description": "Message when location search returns no results"
+  },
+  "homeSearchError": "We couldn't search right now. Please try again.",
+  "@homeSearchError": {
+    "description": "Error message when location search fails"
+  },
+  "homeSearchLoading": "Searching…",
+  "@homeSearchLoading": {
+    "description": "Loading message while searching for locations"
+  },
+  "homeLocationDetecting": "Detecting your location…",
+  "@homeLocationDetecting": {
+    "description": "Message shown while detecting current location"
+  },
+  "homeLocationFound": "Location found",
+  "@homeLocationFound": {
+    "description": "Message shown when location is successfully detected"
+  },
+  "homeLocationError": "Unable to detect location",
+  "@homeLocationError": {
+    "description": "Error message when location detection fails"
+  },
+  "homeLocationRetry": "Try Again",
+  "@homeLocationRetry": {
+    "description": "Button text to retry location detection"
+  },
+  "mapLoadingText": "Loading map...",
+  "@mapLoadingText": {
+    "description": "Loading text displayed while map is loading"
+  }
+}

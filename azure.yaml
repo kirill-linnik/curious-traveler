@@ -4,6 +4,11 @@ name: curious-traveler
 metadata:
   template: curious-traveler@0.0.1-beta
 
+hooks:
+  postdeploy:
+    shell: pwsh
+    run: hooks/postdeploy.ps1
+
 services:
   api:
     project: ./src/api

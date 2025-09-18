@@ -25,7 +25,7 @@ class EnvironmentConfig {
       'httpTimeout': 30, // seconds
     },
     Environment.production: {
-      'apiBaseUrl': 'https://app-lgspm4eb5e6eg.azurewebsites.net/api', // Deployed Web API endpoint
+      'apiBaseUrl': 'https://[ADJUSTED-WITH-AZD-UP-SCRIPT]/api', // Will be updated by azd post-deploy hook
       'enableLogging': false,
       'httpTimeout': 30,
     },

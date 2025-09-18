@@ -1,10 +1,24 @@
 using CuriousTraveler.Api.Middleware;
 using CuriousTraveler.Api.Services;
+using CuriousTraveler.Api.Services.AI;
+using CuriousTraveler.Api.Services.Business;
+using CuriousTraveler.Api.Services.Storage;
+using CuriousTraveler.Api.Services.Workers;
+using CuriousTraveler.Api.Models.Configuration;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure logging with timestamps
+builder.Logging.ClearProviders();
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.TimestampFormat = "[yyyy-MM-dd HH:mm:ss.fff] ";
+    options.IncludeScopes = true;
+    options.SingleLine = false;
+});
 
 // Add Application Insights
 builder.Services.AddApplicationInsightsTelemetry();
@@ -19,7 +33,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { 
         Title = "Curious Traveler API", 
         Version = "v1",
-        Description = "ASP.NET Core Web API for the Curious Traveler mobile app"
+        Description = "ASP.NET Core Web API for the Curious Traveler mobile app with async itinerary creation"
     });
     
     // Include XML comments if available
@@ -34,15 +48,38 @@ builder.Services.AddSwaggerGen(c =>
 // Add memory cache
 builder.Services.AddMemoryCache();
 
+// Configure options
+builder.Services.Configure<ItinerariesOptions>(
+    builder.Configuration.GetSection(ItinerariesOptions.Section));
+builder.Services.Configure<AzureMapsOptions>(
+    builder.Configuration.GetSection(AzureMapsOptions.Section));
+builder.Services.Configure<AzureOpenAIOptions>(
+    builder.Configuration.GetSection(AzureOpenAIOptions.Section));
+builder.Services.Configure<StorageOptions>(
+    builder.Configuration.GetSection(StorageOptions.Section));
+builder.Services.Configure<RateLimitingOptions>(
+    builder.Configuration.GetSection(RateLimitingOptions.Section));
+
 // Add HTTP clients
 builder.Services.AddHttpClient<IAzureMapsService, AzureMapsService>();
 
-// Add custom services
-builder.Services.AddScoped<IAzureMapsService, AzureMapsService>();
+// Add custom services as singletons to prevent constant re-initialization in background worker
+builder.Services.AddSingleton<IAzureMapsService, AzureMapsService>();
+builder.Services.AddSingleton<IOpenAIService, OpenAIService>();
+builder.Services.AddSingleton<IItineraryBuilderService, ItineraryBuilderService>();
+builder.Services.AddSingleton<IQueueService, QueueService>();
+builder.Services.AddSingleton<ITableStorageService, TableStorageService>();
+
+// Add background services
+builder.Services.AddHostedService<ItineraryWorkerService>();
 
 // Add rate limiting
+var rateLimitingOptions = new RateLimitingOptions();
+builder.Configuration.GetSection(RateLimitingOptions.Section).Bind(rateLimitingOptions);
+
 builder.Services.AddRateLimiter(options =>
 {
+    // Existing rate limiting policies
     options.AddFixedWindowLimiter("GeocodingPolicy", limiterOptions =>
     {
         limiterOptions.PermitLimit = 60;
@@ -53,10 +90,27 @@ builder.Services.AddRateLimiter(options =>
     
     options.AddFixedWindowLimiter("MapsPolicy", limiterOptions =>
     {
-        limiterOptions.PermitLimit = 100; // Higher limit for token requests
+        limiterOptions.PermitLimit = 100;
         limiterOptions.Window = TimeSpan.FromMinutes(1);
         limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         limiterOptions.QueueLimit = 20;
+    });
+
+    // New rate limiting policies for itinerary endpoints
+    options.AddFixedWindowLimiter("ItineraryPostPolicy", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = rateLimitingOptions.PostPerMinute;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 5;
+    });
+
+    options.AddFixedWindowLimiter("ItineraryGetPolicy", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = rateLimitingOptions.GetPerMinute;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 10;
     });
     
     options.OnRejected = async (context, token) =>
@@ -81,8 +135,6 @@ builder.Services.AddCors(options =>
               .SetIsOriginAllowedToAllowWildcardSubdomains();
     });
 });
-
-// Key Vault configuration removed - no longer needed since we use AAD authentication
 
 var app = builder.Build();
 

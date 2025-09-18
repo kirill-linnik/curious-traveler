@@ -31,7 +31,7 @@ public class MapsControllerTests
     }
 
     [Fact]
-    public async Task GetAccessToken_AadMode_ReturnsToken()
+    public void GetAccessToken_AadMode_ReturnsToken()
     {
         // Arrange
         _configMock.Setup(c => c["AZURE_MAPS_AUTH_MODE"]).Returns("AAD");
@@ -47,7 +47,7 @@ public class MapsControllerTests
             .ReturnsAsync(expectedToken);
 
         // Act
-        var result = await _controller.GetAccessToken();
+        var result = _controller.GetAccessToken();
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -61,13 +61,13 @@ public class MapsControllerTests
     }
 
     [Fact]
-    public async Task GetAccessToken_KeyMode_ReturnsBadRequest()
+    public void GetAccessToken_KeyMode_ReturnsBadRequest()
     {
         // Arrange
         _configMock.Setup(c => c["AZURE_MAPS_AUTH_MODE"]).Returns("KEY");
 
         // Act
-        var result = await _controller.GetAccessToken();
+        var result = _controller.GetAccessToken();
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
@@ -79,7 +79,7 @@ public class MapsControllerTests
     }
 
     [Fact]
-    public async Task GetAccessToken_ServiceThrowsException_ReturnsBadRequest()
+    public void GetAccessToken_ServiceThrowsException_ReturnsBadRequest()
     {
         // Arrange
         _configMock.Setup(c => c["AZURE_MAPS_AUTH_MODE"]).Returns("AAD");
@@ -89,7 +89,7 @@ public class MapsControllerTests
             .ThrowsAsync(new InvalidOperationException("Failed to get token"));
 
         // Act
-        var result = await _controller.GetAccessToken();
+        var result = _controller.GetAccessToken();
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
@@ -98,7 +98,7 @@ public class MapsControllerTests
     }
 
     [Fact]
-    public async Task GetAccessToken_UnexpectedException_ReturnsServerError()
+    public void GetAccessToken_UnexpectedException_ReturnsServerError()
     {
         // Arrange
         _configMock.Setup(c => c["AZURE_MAPS_AUTH_MODE"]).Returns("AAD");
@@ -108,7 +108,7 @@ public class MapsControllerTests
             .ThrowsAsync(new Exception("Unexpected error"));
 
         // Act
-        var result = await _controller.GetAccessToken();
+        var result = _controller.GetAccessToken();
 
         // Assert
         result.Should().BeOfType<ObjectResult>();

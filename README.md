@@ -146,16 +146,33 @@ This will:
 
 ### 4. Configure Mobile App
 
-After deployment, update the mobile app configuration:
+The mobile app configuration is **automatically updated** during deployment via post-deploy hooks:
+
+- **Automatic Configuration**: The `azd up` command automatically updates the mobile app with the correct API endpoint
+- **Cross-Platform**: Works on Windows, Linux, and macOS using PowerShell Core
+- **No Manual Steps**: The API URL is automatically injected into `src/mobile/lib/config/environment_config.dart`
+
+#### Requirements
+- **PowerShell Core (pwsh)** must be installed on your system:
+  - **Windows**: Usually pre-installed, or `winget install Microsoft.PowerShell`
+  - **Linux**: `sudo apt install powershell` (Debian/Ubuntu) or equivalent
+  - **macOS**: `brew install powershell`
+
+#### Manual Configuration (if needed)
+If the automatic configuration fails, you can manually update the mobile app:
 
 1. Get your App Service URL from azd output:
 ```bash
 azd env get-values
 ```
 
-2. Update the mobile app API configuration in `src/mobile/lib/services/api_service.dart`:
+2. Update the mobile app API configuration in `src/mobile/lib/config/environment_config.dart`:
 ```dart
-static const String _baseUrl = 'https://your-app-service.azurewebsites.net/api';
+Environment.production: {
+  'apiBaseUrl': 'https://your-app-service.azurewebsites.net/api',
+  'enableLogging': false,
+  'httpTimeout': 30,
+},
 ```
 
 Note: No function keys are required since this is an App Service deployment with standard HTTP endpoints.
@@ -174,7 +191,7 @@ The application implements a **secure-by-design** approach for Azure Maps access
 
 ### Endpoints
 
-#### Geocoding APIs (Unchanged from Bing Maps)
+#### Geocoding APIs
 - `GET /api/geocode/reverse?latitude={lat}&longitude={lon}&language={lang}` - Convert coordinates to addresses
 - `GET /api/geocode/search?query={q}&language={lang}&limit={n}` - Search for locations
 
@@ -183,7 +200,7 @@ The application implements a **secure-by-design** approach for Azure Maps access
 
 ### Client-Side Map Integration
 
-The mobile app now uses **Azure Maps Web SDK** instead of Bing Maps:
+The mobile app uses **Azure Maps Web SDK** for map rendering:
 
 ```dart
 // Token-based authentication (AAD mode)
@@ -229,6 +246,30 @@ To change authentication modes after deployment:
    ```
 
 **Note**: Mode changes require redeployment to update infrastructure and application settings.
+
+### Deployment Automation
+
+The project includes **automatic configuration management** via post-deploy hooks:
+
+#### Mobile App Configuration Hook
+- **File**: `hooks/postdeploy.ps1`
+- **Purpose**: Automatically updates mobile app configuration with deployed API endpoint
+- **Cross-Platform**: Uses PowerShell Core for Windows, Linux, and macOS compatibility
+- **Process**: 
+  1. Retrieves `SERVICE_API_URI` from azd environment variables
+  2. Updates `src/mobile/lib/config/environment_config.dart` with the actual API URL
+  3. Replaces placeholder URL with the real deployed endpoint
+
+#### Technical Details
+```yaml
+# azure.yaml hook configuration
+hooks:
+  postdeploy:
+    shell: pwsh
+    run: hooks/postdeploy.ps1
+```
+
+This eliminates manual configuration steps and ensures the mobile app always points to the correct API endpoint after deployment.
 
 ### 5. Run Mobile App
 

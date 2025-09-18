@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '../l10n/app_localizations.dart';
 import '../models/itinerary_models.dart';
 import '../providers/itinerary_provider.dart';
+import '../providers/enhanced_location_provider.dart';
 import '../providers/audio_provider.dart';
 import '../widgets/location_card.dart';
 import '../widgets/audio_player_widget.dart';
 import '../widgets/azure_maps_widget.dart';
+import '../widgets/journey_timeline_widget.dart';
 import '../widgets/info_banner.dart';
 
 class ItineraryScreen extends StatefulWidget {
@@ -19,11 +22,122 @@ class ItineraryScreen extends StatefulWidget {
 class _ItineraryScreenState extends State<ItineraryScreen> with TickerProviderStateMixin {
   late TabController _tabController;
   int _selectedLocationIndex = 0;
+  Set<String> _nearbyStopIds = {};
+  Set<String> _tappedStopIds = {}; // Track manually tapped stops
+  Timer? _locationMonitoringTimer;
+  static const double _proximityRadiusMeters = 50.0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
+    _startLocationMonitoring();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _locationMonitoringTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startLocationMonitoring() {
+    // Monitor location every 5 seconds
+    _locationMonitoringTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _checkProximityToStops();
+    });
+    
+    // Defer initial check until after build is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _forceLocationUpdate();
+    });
+  }
+
+  Future<void> _forceLocationUpdate() async {
+    if (!mounted) return;
+    
+    final locationProvider = context.read<EnhancedLocationProvider>();
+    
+    // Force a fresh location detection
+    print('DEBUG: Forcing location update...');
+    await locationProvider.refreshCurrentLocation();
+    
+    // Then check proximity
+    _checkProximityToStops();
+  }
+
+  Future<void> _checkProximityToStops() async {
+    if (!mounted) return;
+    
+    final locationProvider = context.read<EnhancedLocationProvider>();
+    final itineraryProvider = context.read<ItineraryProvider>();
+    
+    final currentLocation = locationProvider.currentLocation;
+    final currentResult = itineraryProvider.currentResult;
+    
+    print('DEBUG: Location monitoring check:');
+    print('  - Current location: ${currentLocation?.latitude}, ${currentLocation?.longitude}');
+    print('  - Has itinerary result: ${currentResult != null}');
+    
+    if (currentLocation == null) {
+      print('DEBUG: No current location available');
+      return;
+    }
+    
+    if (currentResult == null) {
+      print('DEBUG: No itinerary result available');
+      return;
+    }
+    
+    print('DEBUG: Checking ${currentResult.stops.length} stops for proximity');
+    
+    Set<String> newNearbyStops = {};
+    
+    try {
+      for (final stop in currentResult.stops) {
+        final stopLocation = Location(
+          latitude: stop.lat,
+          longitude: stop.lon,
+          address: stop.address,
+        );
+        
+        final distance = await locationProvider.getDistanceBetween(currentLocation, stopLocation);
+        
+        print('DEBUG: Distance to ${stop.name} (${stop.id}): ${distance.toStringAsFixed(1)}m');
+        
+        if (distance <= _proximityRadiusMeters) {
+          newNearbyStops.add(stop.id);
+          print('DEBUG: *** User is within ${distance.toStringAsFixed(1)}m of ${stop.name} - HIGHLIGHTING! ***');
+        }
+      }
+    } catch (e) {
+      print('DEBUG: Error calculating distances: $e');
+    }
+    
+    print('DEBUG: Found ${newNearbyStops.length} nearby stops: ${newNearbyStops.toList()}');
+    
+    if (mounted && newNearbyStops != _nearbyStopIds) {
+      setState(() {
+        _nearbyStopIds = newNearbyStops;
+      });
+      print('DEBUG: Updated nearby stops state');
+    }
+  }
+
+  void _onStopTapped(String stopId) {
+    setState(() {
+      if (_tappedStopIds.contains(stopId)) {
+        _tappedStopIds.remove(stopId); // Toggle off if already tapped
+      } else {
+        _tappedStopIds.add(stopId); // Toggle on
+      }
+    });
+    print('DEBUG: Stop $stopId tapped, now showing description');
+  }
+
+  Set<String> _getVisibleStopIds() {
+    // Combine nearby stops (from GPS) and tapped stops
+    return {..._nearbyStopIds, ..._tappedStopIds};
   }
 
   @override
@@ -36,6 +150,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> with TickerProviderSt
         bottom: TabBar(
           controller: _tabController,
           tabs: [
+            Tab(icon: const Icon(Icons.timeline), text: 'Journey'),
             Tab(icon: const Icon(Icons.list), text: AppLocalizations.of(context)!.listView),
             Tab(icon: const Icon(Icons.map), text: AppLocalizations.of(context)!.mapView),
           ],
@@ -109,6 +224,15 @@ class _ItineraryScreenState extends State<ItineraryScreen> with TickerProviderSt
                 child: TabBarView(
                   controller: _tabController,
                   children: [
+                    // Journey Timeline View
+                    JourneyTimelineWidget(
+                      result: itineraryProvider.currentResult,
+                      legacyItinerary: itineraryProvider.currentItinerary,
+                      nearbyStopIds: _getVisibleStopIds(), // Pass both nearby and tapped stops
+                      onStopTapped: _onStopTapped, // Add tap callback
+                      startAddress: itineraryProvider.originalStartAddress, // Pass actual start address
+                      endAddress: itineraryProvider.originalEndAddress, // Pass actual end address
+                    ),
                     // List View
                     _buildListView(locations, itineraryProvider),
                     // Map View
@@ -253,11 +377,5 @@ class _ItineraryScreenState extends State<ItineraryScreen> with TickerProviderSt
         ),
       );
     }
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 }

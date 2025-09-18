@@ -82,7 +82,7 @@ class CuriousTravelerApp extends StatelessWidget {
                 elevation: 0,
               ),
             ),
-            home: const MainNavigator(),
+            home: MainNavigator(key: mainNavigatorKey),
             debugShowCheckedModeBanner: false,
           );
         },
@@ -91,11 +91,14 @@ class CuriousTravelerApp extends StatelessWidget {
   }
 }
 
+// Global navigator key for tab switching
+final GlobalKey<_MainNavigatorState> mainNavigatorKey = GlobalKey<_MainNavigatorState>();
+
 class MainNavigator extends StatefulWidget {
   const MainNavigator({super.key});
 
   @override
-  State<MainNavigator> createState() => _MainNavigatorState();
+  _MainNavigatorState createState() => _MainNavigatorState();
 }
 
 class _MainNavigatorState extends State<MainNavigator> {
@@ -106,6 +109,14 @@ class _MainNavigatorState extends State<MainNavigator> {
     const ItineraryScreen(),
     const SettingsScreen(),
   ];
+
+  void switchToTab(int index) {
+    if (mounted && index >= 0 && index < _screens.length) {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

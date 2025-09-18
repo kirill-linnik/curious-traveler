@@ -55,9 +55,21 @@ class EnhancedLocationProvider extends ChangeNotifier {
       return;
     }
 
-    _status = LocationStatus.detecting;
-    _error = null;
-    notifyListeners();
+    await _performLocationDetection();
+  }
+
+  /// Force refresh the current location (for proximity monitoring)
+  Future<void> refreshCurrentLocation() async {
+    // Skip notification if we're just refreshing for proximity
+    await _performLocationDetection(skipNotification: true);
+  }
+
+  Future<void> _performLocationDetection({bool skipNotification = false}) async {
+    if (!skipNotification) {
+      _status = LocationStatus.detecting;
+      _error = null;
+      notifyListeners();
+    }
 
     try {
       // Check if location services are enabled
@@ -112,28 +124,39 @@ class EnhancedLocationProvider extends ChangeNotifier {
         locality = null;
       }
 
-      // Create immutable snapshot for the lifetime of this provider instance
-      _currentLocationSnapshot = LocationSnapshot.fromCurrentLocation(
-        displayText: displayText,
-        locality: locality,
-        latitude: position.latitude,
-        longitude: position.longitude,
-      );
+      // Create immutable snapshot only if it doesn't exist (for initial detection)
+      if (_currentLocationSnapshot == null) {
+        _currentLocationSnapshot = LocationSnapshot.fromCurrentLocation(
+          displayText: displayText,
+          locality: locality,
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+      }
 
       _status = LocationStatus.detected;
       _error = null;
 
-      // Automatically search for nearby locations using coordinates
-      await _searchLocationsByCoordinates(position.latitude, position.longitude);
+      // Automatically search for nearby locations using coordinates only on initial detection
+      if (!skipNotification && (_currentLocationSnapshot?.position?.lat != position.latitude || 
+          _currentLocationSnapshot?.position?.lon != position.longitude)) {
+        await _searchLocationsByCoordinates(position.latitude, position.longitude);
+      }
 
     } catch (e) {
       _error = e.toString();
       _currentLocation = null;
-      _currentLocationSnapshot = null;  // Ensure snapshot is null on failure
-      _status = LocationStatus.failed;
+      if (_currentLocationSnapshot == null) {
+        _currentLocationSnapshot = null;  // Only clear on initial detection failure
+      }
+      if (!skipNotification) {
+        _status = LocationStatus.failed;
+      }
     }
 
-    notifyListeners();
+    if (!skipNotification) {
+      notifyListeners();
+    }
   }
 
   Future<void> _searchLocationsByCoordinates(double latitude, double longitude) async {

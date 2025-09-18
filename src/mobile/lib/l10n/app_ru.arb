@@ -103,5 +103,16 @@
   "homeLocationRetry": "Попробовать снова",
   "homeTitleStartOfJourney": "Начало путешествия",
   "homeTitleEndOfJourney": "Конец путешествия",
-  "mapLoadingText": "Загрузка карты..."
+  "mapLoadingText": "Загрузка карты...",
+  "itineraryJobCreating": "Создание задачи маршрута...",
+  "itineraryJobProcessing": "Маршрут готовится, пожалуйста подождите...",
+  "itineraryJobCompleted": "Маршрут успешно создан!",
+  "itineraryJobFailed": "Не удалось создать маршрут",
+  "itineraryJobErrorOccurred": "Произошла ошибка при создании маршрута",
+  "itineraryJobStartFailed": "Не удалось запустить создание маршрута",
+  "itineraryJobCreateFailed": "Не удалось создать задачу маршрута. Пожалуйста, попробуйте снова.",
+  "selectStartLocation": "Пожалуйста, выберите начальную точку",
+  "selectEndLocation": "Пожалуйста, выберите конечную точку",
+  "arriveInMinutes": "прибытие через {minutes} минут",
+  "spendMinutes": "провести {minutes} минут"
 }

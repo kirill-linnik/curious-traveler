@@ -103,5 +103,16 @@
   "homeLocationRetry": "Tentar novamente",
   "homeTitleStartOfJourney": "Início da jornada",
   "homeTitleEndOfJourney": "Final da jornada",
-  "mapLoadingText": "Carregando mapa..."
+  "mapLoadingText": "Carregando mapa...",
+  "itineraryJobCreating": "Criando trabalho de itinerário...",
+  "itineraryJobProcessing": "O itinerário está sendo preparado, por favor aguarde...",
+  "itineraryJobCompleted": "Itinerário concluído com sucesso!",
+  "itineraryJobFailed": "Falha ao criar itinerário",
+  "itineraryJobErrorOccurred": "Ocorreu um erro ao criar o itinerário",
+  "itineraryJobStartFailed": "Falha ao iniciar a criação do itinerário",
+  "itineraryJobCreateFailed": "Falha ao criar trabalho de itinerário. Tente novamente.",
+  "selectStartLocation": "Por favor, selecione um local de início",
+  "selectEndLocation": "Por favor, selecione um local de destino",
+  "arriveInMinutes": "chegar em {minutes} minutos",
+  "spendMinutes": "passar {minutes} minutos"
 }

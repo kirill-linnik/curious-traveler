@@ -10,7 +10,7 @@ import '../config/app_config.dart';
 /// Currently supports:
 /// - ✅ Location search (geocoding) via ASP.NET Core Web API  
 /// - ✅ Reverse geocoding via ASP.NET Core Web API
-/// - ❌ Itinerary generation (not yet implemented)
+/// - ✅ Itinerary job creation and status polling via ASP.NET Core Web API
 /// - ❌ Audio generation (not yet implemented) 
 /// - ❌ Location narration (not yet implemented)
 class ApiService {
@@ -21,6 +21,106 @@ class ApiService {
 
   Map<String, String> _getHeaders() {
     return Map<String, String>.from(AppConfig.defaultHeaders);
+  }
+
+  /// Create a new itinerary job
+  Future<ItineraryJobResponse> createItineraryJob(ItineraryJobRequest request) async {
+    print('DEBUG: ApiService.createItineraryJob called');
+    print('DEBUG: Base URL: $_baseUrl');
+    print('DEBUG: Request: ${request.toJson()}');
+    
+    try {
+      final uri = Uri.parse('$_baseUrl/itinerary-jobs');
+      print('DEBUG: Making POST request to: $uri');
+      
+      final requestBody = jsonEncode(request.toJson());
+      print('DEBUG: Request body: $requestBody');
+      
+      final response = await _client.post(
+        uri,
+        headers: _getHeaders(),
+        body: requestBody,
+      ).timeout(AppConfig.httpTimeout);
+
+      print('DEBUG: Response status: ${response.statusCode}');
+      print('DEBUG: Response body: ${response.body}');
+
+      if (response.statusCode == 202) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        final jobId = jsonData['jobId'] as String;
+        
+        // The 202 response only contains jobId, so we create a ItineraryJobResponse
+        // with processing status
+        final result = ItineraryJobResponse(
+          jobId: jobId,
+          status: JobStatus.processing,
+        );
+        print('DEBUG: Successfully created job: ${result.jobId}');
+        return result;
+      } else if (response.statusCode == 400) {
+        print('DEBUG: Bad request error');
+        throw ApiException('Invalid request: ${response.body}', response.statusCode);
+      } else if (response.statusCode == 429) {
+        print('DEBUG: Rate limit error');
+        throw ApiException('Too many requests. Please try again later.', response.statusCode);
+      } else {
+        print('DEBUG: Unexpected status code: ${response.statusCode}');
+        throw ApiException(
+          'Failed to create itinerary job: ${response.statusCode}',
+          response.statusCode,
+        );
+      }
+    } catch (e, stackTrace) {
+      print('DEBUG: Exception in createItineraryJob: $e');
+      print('DEBUG: Stack trace: $stackTrace');
+      if (e is ApiException) rethrow;
+      throw ApiException('Itinerary job creation error: $e', 0);
+    }
+  }
+
+  /// Get itinerary job status and result
+  Future<ItineraryJobResponse> getItineraryJob(String jobId) async {
+    print('DEBUG: ApiService.getItineraryJob called with jobId: $jobId');
+    
+    try {
+      final uri = Uri.parse('$_baseUrl/itinerary-jobs/$jobId');
+      print('DEBUG: Making GET request to: $uri');
+      
+      final response = await _client.get(
+        uri,
+        headers: _getHeaders(),
+      ).timeout(AppConfig.httpTimeout);
+
+      print('DEBUG: Response status: ${response.statusCode}');
+      print('DEBUG: Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 202) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        final result = ItineraryJobResponse.fromJson(jsonData);
+        print('DEBUG: Successfully retrieved job status: ${result.status}');
+        return result;
+      } else if (response.statusCode == 404) {
+        print('DEBUG: Job not found (404)');
+        throw ApiException('Job not found or expired', response.statusCode);
+      } else if (response.statusCode == 410) {
+        print('DEBUG: Job expired (410)');
+        throw ApiException('Job expired', response.statusCode);
+      } else if (response.statusCode == 429) {
+        print('DEBUG: Rate limit error (429)');
+        throw ApiException('Too many requests. Please try again later.', response.statusCode);
+      } else {
+        print('DEBUG: Unexpected status code: ${response.statusCode}');
+        throw ApiException(
+          'Failed to get itinerary job: ${response.statusCode}',
+          response.statusCode,
+        );
+      }
+    } catch (e, stackTrace) {
+      print('DEBUG: Exception in getItineraryJob: $e');
+      print('DEBUG: Stack trace: $stackTrace');
+      if (e is ApiException) rethrow;
+      throw ApiException('Itinerary job retrieval error: $e', 0);
+    }
   }
 
   Future<Itinerary> generateItinerary(ItineraryRequest request) async {

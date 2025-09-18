@@ -103,5 +103,16 @@
   "homeLocationRetry": "Riprova",
   "homeTitleStartOfJourney": "Inizio del viaggio",
   "homeTitleEndOfJourney": "Fine del viaggio",
-  "mapLoadingText": "Caricamento mappa..."
+  "mapLoadingText": "Caricamento mappa...",
+  "itineraryJobCreating": "Creazione lavoro itinerario...",
+  "itineraryJobProcessing": "L'itinerario è in preparazione, si prega di attendere...",
+  "itineraryJobCompleted": "Itinerario completato con successo!",
+  "itineraryJobFailed": "Creazione itinerario fallita",
+  "itineraryJobErrorOccurred": "Si è verificato un errore durante la creazione dell'itinerario",
+  "itineraryJobStartFailed": "Impossibile avviare la creazione dell'itinerario",
+  "itineraryJobCreateFailed": "Impossibile creare il lavoro itinerario. Riprova.",
+  "selectStartLocation": "Seleziona una posizione di partenza",
+  "selectEndLocation": "Seleziona una posizione di destinazione",
+  "arriveInMinutes": "arrivare in {minutes} minuti",
+  "spendMinutes": "trascorrere {minutes} minuti"
 }

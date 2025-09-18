@@ -13,6 +13,7 @@ import '../widgets/commute_selector.dart';
 import '../widgets/segmented_toggle.dart';
 import '../widgets/location_search_input.dart';
 import '../widgets/info_banner.dart';
+import '../main.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -129,6 +130,18 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Consumer2<ItineraryProvider, EnhancedLocationProvider>(
         builder: (context, itineraryProvider, locationProvider, child) {
+          // Check if we should automatically switch to itinerary tab
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && 
+                itineraryProvider.jobStatus == JobStatus.completed && 
+                itineraryProvider.hasItinerary) {
+              print('DEBUG: Job reached final state: JobStatus.completed <- switching to itinerary tab automatically');
+              
+              // Use global key to switch to itinerary tab (index 1)
+              mainNavigatorKey.currentState?.switchToTab(1);
+            }
+          });
+          
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -157,88 +170,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 24),
 
                 // START OF JOURNEY BLOCK
-                Text(
-                  localizations.homeTitleStartOfJourney,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                
-                ListenableBuilder(
-                  listenable: _locationVm.start,
-                  builder: (context, _) {
-                    return SegmentedToggle(
-                      value: _locationVm.start.mode,
-                      onChanged: (mode) => _locationVm.start.setMode(
-                        mode,
-                        currentSnapshot: _locationVm.currentLocationSnapshot,
-                      ),
-                      labels: [
-                        localizations.homeToggleCurrentLocation,
-                        localizations.homeToggleAnotherLocation,
-                      ],
-                    );
-                  },
-                ),
-                
-                const SizedBox(height: 12),
-                
-                ListenableBuilder(
-                  listenable: _locationVm.start,
-                  builder: (context, _) {
-                    return LocationSearchInput(
-                      endpointState: _locationVm.start,
-                      enabled: _locationVm.start.mode == LocationMode.anotherLocation,
-                      onSearch: _locationVm.searchLocations,
-                      onSuggestionTap: (selection, ctx) => 
-                          _locationVm.start.onSuggestionSelected(selection, ctx),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 24),
-
-                // END OF JOURNEY BLOCK
-                Text(
-                  localizations.homeTitleEndOfJourney,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                
-                ListenableBuilder(
-                  listenable: _locationVm.end,
-                  builder: (context, _) {
-                    return SegmentedToggle(
-                      value: _locationVm.end.mode,
-                      onChanged: (mode) => _locationVm.end.setMode(
-                        mode,
-                        currentSnapshot: _locationVm.currentLocationSnapshot,
-                      ),
-                      labels: [
-                        localizations.homeToggleCurrentLocation,
-                        localizations.homeToggleAnotherLocation,
-                      ],
-                    );
-                  },
-                ),
-                
-                const SizedBox(height: 12),
-                
-                ListenableBuilder(
-                  listenable: _locationVm.end,
-                  builder: (context, _) {
-                    return LocationSearchInput(
-                      endpointState: _locationVm.end,
-                      enabled: _locationVm.end.mode == LocationMode.anotherLocation,
-                      onSearch: _locationVm.searchLocations,
-                      onSuggestionTap: (selection, ctx) => 
-                          _locationVm.end.onSuggestionSelected(selection, ctx),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 32),
-
-                // Interests Section
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -246,17 +177,40 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          localizations.whatInterestsYou,
-                          style: Theme.of(context).textTheme.headlineSmall,
+                          localizations.homeTitleStartOfJourney,
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        const SizedBox(height: 16),
-                        InterestSelector(
-                          selectedInterests: _selectedInterests,
-                          onChanged: (interests) {
-                            setState(() {
-                              _selectedInterests = interests;
-                            });
-                            _savePreferences();
+                        const SizedBox(height: 12),
+                        
+                        ListenableBuilder(
+                          listenable: _locationVm.start,
+                          builder: (context, _) {
+                            return SegmentedToggle(
+                              value: _locationVm.start.mode,
+                              onChanged: (mode) => _locationVm.start.setMode(
+                                mode,
+                                currentSnapshot: _locationVm.currentLocationSnapshot,
+                              ),
+                              labels: [
+                                localizations.homeToggleCurrentLocation,
+                                localizations.homeToggleAnotherLocation,
+                              ],
+                            );
+                          },
+                        ),
+                        
+                        const SizedBox(height: 12),
+                        
+                        ListenableBuilder(
+                          listenable: _locationVm.start,
+                          builder: (context, _) {
+                            return LocationSearchInput(
+                              endpointState: _locationVm.start,
+                              enabled: _locationVm.start.mode == LocationMode.anotherLocation,
+                              onSearch: _locationVm.searchLocations,
+                              onSuggestionTap: (selection, ctx) => 
+                                  _locationVm.start.onSuggestionSelected(selection, ctx),
+                            );
                           },
                         ),
                       ],
@@ -266,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 24),
 
-                // Commute Section
+                // END OF JOURNEY BLOCK
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -274,15 +228,96 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          localizations.howWillYouGetAround,
+                          localizations.homeTitleEndOfJourney,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        
+                        ListenableBuilder(
+                          listenable: _locationVm.end,
+                          builder: (context, _) {
+                            return SegmentedToggle(
+                              value: _locationVm.end.mode,
+                              onChanged: (mode) => _locationVm.end.setMode(
+                                mode,
+                                currentSnapshot: _locationVm.currentLocationSnapshot,
+                              ),
+                              labels: [
+                                localizations.homeToggleCurrentLocation,
+                                localizations.homeToggleAnotherLocation,
+                              ],
+                            );
+                          },
+                        ),
+                        
+                        const SizedBox(height: 12),
+                        
+                        ListenableBuilder(
+                          listenable: _locationVm.end,
+                          builder: (context, _) {
+                            return LocationSearchInput(
+                              endpointState: _locationVm.end,
+                              enabled: _locationVm.end.mode == LocationMode.anotherLocation,
+                              onSearch: _locationVm.searchLocations,
+                              onSuggestionTap: (selection, ctx) => 
+                                  _locationVm.end.onSuggestionSelected(selection, ctx),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Interests Section
+                InterestSelector(
+                  selectedInterests: _selectedInterests,
+                  onChanged: (interests) {
+                    setState(() {
+                      _selectedInterests = interests;
+                    });
+                    _savePreferences();
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Commute Section
+                CommuteSelector(
+                  selectedStyle: _selectedCommuteStyle,
+                  onChanged: (style) {
+                    setState(() {
+                      _selectedCommuteStyle = style;
+                    });
+                    _savePreferences();
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Duration Section
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          localizations.durationHours(_duration),
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 16),
-                        CommuteSelector(
-                          selectedStyle: _selectedCommuteStyle,
-                          onChanged: (style) {
+                        Slider(
+                          value: _duration.toDouble(),
+                          min: 1,
+                          max: 12,
+                          divisions: 11,
+                          label: localizations.durationHours(_duration),
+                          onChanged: (value) {
                             setState(() {
-                              _selectedCommuteStyle = style;
+                              _duration = value.round();
                             });
                             _savePreferences();
                           },
@@ -322,55 +357,85 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _generateItinerary(ItineraryProvider itineraryProvider) async {
+    final localizations = AppLocalizations.of(context)!;
+    
+    print('DEBUG: _generateItinerary called');
+    
     // Dismiss any existing banners first
     InfoBannerService.dismiss();
     
     try {
-      // For now, use the start location as the target for itinerary generation
-      // In the future, this will be updated to use both start and end coordinates
+      // Get both start and end coordinates for the new job-based API
       final startCoords = _locationVm.startCoords;
+      final endCoords = _locationVm.endCoords;
+      
+      print('DEBUG: Start coords: $startCoords');
+      print('DEBUG: End coords: $endCoords');
+      
       if (startCoords == null) {
+        print('DEBUG: No start location selected');
         InfoBannerService.show(
           context: context,
-          message: 'Please select a start location',
+          message: localizations.selectStartLocation,
+          type: InfoBannerType.error,
+        );
+        return;
+      }
+      
+      if (endCoords == null) {
+        print('DEBUG: No end location selected');
+        InfoBannerService.show(
+          context: context,
+          message: localizations.selectEndLocation,
           type: InfoBannerType.error,
         );
         return;
       }
 
-      // Create a dummy location result for the current API
-      final targetLocation = LocationSearchResult(
-        id: 'start_location',
-        type: 'Location',
-        name: 'Start Location',
-        formattedAddress: _locationVm.start.displayText,
-        locality: '',
-        countryCode: '',
-        latitude: startCoords.lat,
-        longitude: startCoords.lon,
-        confidence: 'high',
+      // Create LocationPoint objects for the job request
+      final startPoint = LocationPoint(
+        lat: startCoords.lat,
+        lon: startCoords.lon,
+        address: _locationVm.start.displayText,
+      );
+      
+      final endPoint = LocationPoint(
+        lat: endCoords.lat,
+        lon: endCoords.lon,
+        address: _locationVm.end.displayText,
       );
 
-      await itineraryProvider.generateItinerary(
-        city: targetLocation.name,
+      print('DEBUG: Start point: ${startPoint.toJson()}');
+      print('DEBUG: End point: ${endPoint.toJson()}');
+      print('DEBUG: Interests: $_selectedInterests');
+      print('DEBUG: Duration: $_duration hours');
+
+      // Convert CommuteStyle to TravelMode
+      final travelMode = TravelModeExtension.fromCommuteStyle(_selectedCommuteStyle);
+      print('DEBUG: Travel mode: $travelMode');
+
+      // Use the new job-based API with 2-character language code
+      print('DEBUG: Calling generateItineraryWithJob...');
+      await itineraryProvider.generateItineraryWithJob(
+        start: startPoint,
+        end: endPoint,
         interests: _selectedInterests,
-        commuteStyle: _selectedCommuteStyle,
-        duration: _duration,
-        language: _language,
+        mode: travelMode,
+        durationHours: _duration,
+        language: _language.substring(0, 2), // Use only first 2 characters (en-US -> en)
       );
 
-      if (mounted && itineraryProvider.currentItinerary != null) {
-        Navigator.pushNamed(
-          context,
-          '/itinerary',
-          arguments: itineraryProvider.currentItinerary,
-        );
-      }
-    } catch (e) {
+      print('DEBUG: generateItineraryWithJob completed successfully');
+      // Navigation will be handled automatically when the job completes
+      // The provider will update the UI through listeners
+      
+    } catch (e, stackTrace) {
+      print('DEBUG: Error in _generateItinerary: $e');
+      print('DEBUG: Stack trace: $stackTrace');
       if (mounted) {
         InfoBannerService.show(
           context: context,
-          message: 'Failed to generate itinerary. Please try again.',
+          message: '${localizations.itineraryJobCreateFailed}\n\nError: $e',
           type: InfoBannerType.error,
         );
       }

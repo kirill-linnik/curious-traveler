@@ -103,5 +103,16 @@
   "homeLocationRetry": "Erneut versuchen",
   "homeTitleStartOfJourney": "Start der Reise",
   "homeTitleEndOfJourney": "Ende der Reise",
-  "mapLoadingText": "Karte wird geladen..."
+  "mapLoadingText": "Karte wird geladen...",
+  "itineraryJobCreating": "Reisejob wird erstellt...",
+  "itineraryJobProcessing": "Reiseplan wird vorbereitet, bitte warten...",
+  "itineraryJobCompleted": "Reiseplan erfolgreich abgeschlossen!",
+  "itineraryJobFailed": "Reiseplan-Erstellung fehlgeschlagen",
+  "itineraryJobErrorOccurred": "Fehler beim Erstellen des Reiseplans aufgetreten",
+  "itineraryJobStartFailed": "Reiseplan-Erstellung konnte nicht gestartet werden",
+  "itineraryJobCreateFailed": "Reisejob konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+  "selectStartLocation": "Bitte wählen Sie einen Startort aus",
+  "selectEndLocation": "Bitte wählen Sie einen Zielort aus",
+  "arriveInMinutes": "Ankunft in {minutes} Minuten",
+  "spendMinutes": "Verweildauer {minutes} Minuten"
 }

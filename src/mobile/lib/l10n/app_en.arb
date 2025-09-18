@@ -491,5 +491,61 @@
   "mapLoadingText": "Loading map...",
   "@mapLoadingText": {
     "description": "Loading text displayed while map is loading"
+  },
+  "itineraryJobCreating": "Creating itinerary job...",
+  "@itineraryJobCreating": {
+    "description": "Status message when creating a new itinerary job"
+  },
+  "itineraryJobProcessing": "Itinerary is being prepared, please wait...",
+  "@itineraryJobProcessing": {
+    "description": "Status message while itinerary job is processing"
+  },
+  "itineraryJobCompleted": "Itinerary completed successfully!",
+  "@itineraryJobCompleted": {
+    "description": "Status message when itinerary job completes successfully"
+  },
+  "itineraryJobFailed": "Failed to create itinerary",
+  "@itineraryJobFailed": {
+    "description": "Status message when itinerary job fails"
+  },
+  "itineraryJobErrorOccurred": "Error occurred while creating itinerary",
+  "@itineraryJobErrorOccurred": {
+    "description": "Status message when an error occurs during job processing"
+  },
+  "itineraryJobStartFailed": "Failed to start itinerary creation",
+  "@itineraryJobStartFailed": {
+    "description": "Error message when job creation fails to start"
+  },
+  "itineraryJobCreateFailed": "Failed to create itinerary job. Please try again.",
+  "@itineraryJobCreateFailed": {
+    "description": "Error message shown when job creation request fails"
+  },
+  "selectStartLocation": "Please select a start location",
+  "@selectStartLocation": {
+    "description": "Error message when no start location is selected"
+  },
+  "selectEndLocation": "Please select an end location",
+  "@selectEndLocation": {
+    "description": "Error message when no end location is selected"
+  },
+  "arriveInMinutes": "arrive in {minutes} minutes",
+  "@arriveInMinutes": {
+    "description": "Display format for arrival time",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "15"
+      }
+    }
+  },
+  "spendMinutes": "spend {minutes} minutes",
+  "@spendMinutes": {
+    "description": "Display format for time spent at location",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "30"
+      }
+    }
   }
 }

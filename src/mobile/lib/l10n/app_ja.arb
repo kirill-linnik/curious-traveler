@@ -103,5 +103,16 @@
   "homeLocationRetry": "再試行",
   "homeTitleStartOfJourney": "旅の始まり",
   "homeTitleEndOfJourney": "旅の終わり",
-  "mapLoadingText": "マップを読み込み中..."
+  "mapLoadingText": "マップを読み込み中...",
+  "itineraryJobCreating": "Creating itinerary job...",
+  "itineraryJobProcessing": "Itinerary is being prepared, please wait...",
+  "itineraryJobCompleted": "Itinerary completed successfully!",
+  "itineraryJobFailed": "Failed to create itinerary",
+  "itineraryJobErrorOccurred": "Error occurred while creating itinerary",
+  "itineraryJobStartFailed": "Failed to start itinerary creation",
+  "itineraryJobCreateFailed": "Failed to create itinerary job. Please try again.",
+  "selectStartLocation": "Please select a start location",
+  "selectEndLocation": "Please select an end location",
+  "arriveInMinutes": "arrive in {minutes} minutes",
+  "spendMinutes": "spend {minutes} minutes"
 }

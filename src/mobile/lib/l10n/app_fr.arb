@@ -103,5 +103,16 @@
   "homeLocationRetry": "Réessayer",
   "homeTitleStartOfJourney": "Début du voyage",
   "homeTitleEndOfJourney": "Fin du voyage",
-  "mapLoadingText": "Chargement de la carte..."
+  "mapLoadingText": "Chargement de la carte...",
+  "itineraryJobCreating": "Création du travail d'itinéraire...",
+  "itineraryJobProcessing": "L'itinéraire est en cours de préparation, veuillez patienter...",
+  "itineraryJobCompleted": "Itinéraire terminé avec succès!",
+  "itineraryJobFailed": "Échec de la création de l'itinéraire",
+  "itineraryJobErrorOccurred": "Une erreur s'est produite lors de la création de l'itinéraire",
+  "itineraryJobStartFailed": "Impossible de démarrer la création de l'itinéraire",
+  "itineraryJobCreateFailed": "Impossible de créer le travail d'itinéraire. Veuillez réessayer.",
+  "selectStartLocation": "Veuillez sélectionner un lieu de départ",
+  "selectEndLocation": "Veuillez sélectionner un lieu de destination",
+  "arriveInMinutes": "arriver dans {minutes} minutes",
+  "spendMinutes": "passer {minutes} minutes"
 }

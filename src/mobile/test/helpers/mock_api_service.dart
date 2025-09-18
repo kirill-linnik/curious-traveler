@@ -116,5 +116,15 @@ class MockApiService implements ApiService {
   }
 
   @override
+  Future<ItineraryJobResponse> createItineraryJob(ItineraryJobRequest request) async {
+    throw ApiException('Itinerary job creation is not yet available', 501);
+  }
+
+  @override
+  Future<ItineraryJobResponse> getItineraryJob(String jobId) async {
+    throw ApiException('Itinerary job retrieval is not yet available', 501);
+  }
+
+  @override
   void dispose() {}
 }

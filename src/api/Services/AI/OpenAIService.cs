@@ -40,6 +40,14 @@ public interface IOpenAIService
         int maxCeilingMinutes, 
         CancellationToken cancellationToken = default);
 
+    Task<Dictionary<string, int>> EstimateBatchMinVisitMinutesAsync(
+        List<PointOfInterest> pois, 
+        string language, 
+        Dictionary<string, int> defaults, 
+        int minFloorMinutes, 
+        int maxCeilingMinutes, 
+        CancellationToken cancellationToken = default);
+
     Task<List<string>> RerankPoisAsync(
         List<PointOfInterest> candidates, 
         List<string> interests, 
@@ -127,6 +135,18 @@ Allowed categories (id (azure_maps_category)): {allowedCategories}";
         List<PoiCategory> availableCategories,
         CancellationToken cancellationToken = default)
     {
+        if (interests == null)
+            throw new ArgumentNullException(nameof(interests));
+
+        if (availableCategories == null)
+            throw new ArgumentNullException(nameof(availableCategories));
+
+        // Handle empty inputs gracefully
+        if (string.IsNullOrWhiteSpace(interests) || !availableCategories.Any())
+        {
+            return new Dictionary<string, List<int>>();
+        }
+
         try
         {
             // Select most relevant categories for the prompt (to avoid token limits)
@@ -140,8 +160,8 @@ Allowed categories (id (azure_maps_category)): {allowedCategories}";
             
             var systemPrompt = GetAzureMapsInterestMappingPrompt();
             var userPrompt = $@"User interests: {interests}
-City: {cityName}
-Language preference: {language}
+City: {cityName ?? "Unknown"}
+Language preference: {language ?? "en"}
 
 Available Azure Maps POI Categories:
 {categoryList}";
@@ -258,6 +278,112 @@ Maximum ceiling: {maxCeilingMinutes} minutes";
             };
             
             return Math.Max(minFloorMinutes, Math.Min(maxCeilingMinutes, fallback));
+        }
+    }
+
+    public async Task<Dictionary<string, int>> EstimateBatchMinVisitMinutesAsync(
+        List<PointOfInterest> pois, 
+        string language, 
+        Dictionary<string, int> defaults, 
+        int minFloorMinutes, 
+        int maxCeilingMinutes,
+        CancellationToken cancellationToken = default)
+    {
+        if (pois == null)
+            throw new ArgumentNullException(nameof(pois));
+
+        if (defaults == null)
+            throw new ArgumentNullException(nameof(defaults));
+
+        // Handle empty list gracefully
+        if (!pois.Any())
+        {
+            return new Dictionary<string, int>();
+        }
+
+        try
+        {
+            var systemPrompt = GetBatchDwellEstimationPrompt();
+            
+            // Build the POIs list for the prompt
+            var poisData = pois.Select(poi => new
+            {
+                id = poi.Id,
+                name = poi.Name,
+                category = poi.Category ?? "unknown",
+                address = poi.Address ?? "unknown location"
+            }).ToList();
+
+            var userPrompt = $@"Language: {language ?? "en"}
+POIs to analyze: {JsonSerializer.Serialize(poisData)}
+Default estimates by category: {JsonSerializer.Serialize(defaults)}
+Minimum floor: {minFloorMinutes} minutes
+Maximum ceiling: {maxCeilingMinutes} minutes";
+
+            var chatClient = _openAIClient.GetChatClient(_options.Gpt5MiniDeployment);
+            
+            var messages = new List<ChatMessage>
+            {
+                ChatMessage.CreateSystemMessage(systemPrompt),
+                ChatMessage.CreateUserMessage(userPrompt)
+            };
+
+            var options = new ChatCompletionOptions
+            {
+                ResponseFormat = ChatResponseFormat.CreateJsonObjectFormat()
+            };
+
+            var response = await chatClient.CompleteChatAsync(messages, options, cancellationToken);
+            
+            var jsonContent = response.Value.Content[0].Text;
+            var result = JsonSerializer.Deserialize<BatchDwellEstimationResult>(jsonContent);
+            
+            // Build result dictionary with fallbacks for any missing POIs
+            var estimatedTimes = new Dictionary<string, int>();
+            
+            foreach (var poi in pois)
+            {
+                if (result?.Estimates?.TryGetValue(poi.Id, out var estimate) == true)
+                {
+                    estimatedTimes[poi.Id] = Math.Max(minFloorMinutes, Math.Min(maxCeilingMinutes, estimate));
+                }
+                else
+                {
+                    // Fallback based on category
+                    var fallback = poi.Category?.ToLowerInvariant() switch
+                    {
+                        "museum" => 120,
+                        "restaurant" => 90,
+                        "attraction" => 60,
+                        "shop" => 30,
+                        _ => 60
+                    };
+                    estimatedTimes[poi.Id] = Math.Max(minFloorMinutes, Math.Min(maxCeilingMinutes, fallback));
+                }
+            }
+            
+            return estimatedTimes;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to estimate batch dwell times for {Count} POIs", pois.Count);
+            
+            // Fallback for all POIs
+            var fallbackResults = new Dictionary<string, int>();
+            foreach (var poi in pois)
+            {
+                var fallback = poi.Category?.ToLowerInvariant() switch
+                {
+                    "museum" => 120,
+                    "restaurant" => 90,
+                    "attraction" => 60,
+                    "shop" => 30,
+                    _ => 60
+                };
+                fallbackResults[poi.Id] = Math.Max(minFloorMinutes, Math.Min(maxCeilingMinutes, fallback));
+            }
+            
+            return fallbackResults;
         }
     }
 
@@ -412,6 +538,38 @@ OUTPUT FORMAT (JSON):
 }
 
 Provide realistic, practical estimates within the given constraints.";
+
+    private static string GetBatchDwellEstimationPrompt() => @"
+You are an expert travel planner. Estimate realistic visit duration for multiple POIs in a single analysis.
+
+TASK: Estimate minimum visit time in minutes for each POI in the provided list.
+
+FACTORS TO CONSIDER:
+1. POI type (museum, restaurant, attraction, etc.)
+2. Typical visitor behavior patterns
+3. POI size and complexity indicators
+4. Location context and category
+5. Provided default estimates as baselines
+6. Minimum and maximum constraints
+
+GUIDELINES:
+- Use provided defaults as baseline for each category
+- Respect minimum and maximum constraints for all estimates
+- Consider POI-specific factors like name, category, and location
+- Provide consistent estimates for similar POI types
+- Account for cultural and regional differences based on language
+
+OUTPUT FORMAT (JSON):
+{
+  ""estimates"": {
+    ""poi_id_1"": 90,
+    ""poi_id_2"": 45,
+    ""poi_id_3"": 120
+  },
+  ""reasoning"": ""Brief explanation of estimation approach""
+}
+
+Analyze all POIs together for consistency and provide realistic, practical estimates.";
 
     private static string GetPoiRerankingPrompt() => @"
 You are an expert travel curator. Select and rank POIs ensuring MANDATORY COVERAGE of all user interests within constraints.
@@ -598,6 +756,15 @@ public class AzureMapsInterestMappingResult
     /// </summary>
     [JsonPropertyName("categoryMapping")]
     public Dictionary<string, List<int>> CategoryMapping { get; set; } = new();
+    
+    [JsonPropertyName("reasoning")]
+    public string? Reasoning { get; set; }
+}
+
+public class BatchDwellEstimationResult
+{
+    [JsonPropertyName("estimates")]
+    public Dictionary<string, int> Estimates { get; set; } = new();
     
     [JsonPropertyName("reasoning")]
     public string? Reasoning { get; set; }

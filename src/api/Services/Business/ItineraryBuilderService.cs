@@ -249,11 +249,26 @@ public class ItineraryBuilderService : IItineraryBuilderService
         };
 
         _logger.LogDebug("DEBUG: Step 7 - Estimating dwell times for {Count} POIs", candidatePois.Count);
+        
+        // Estimate dwell times in a single batch call for optimal performance
+        var dwellEstimates = await _openAIService.EstimateBatchMinVisitMinutesAsync(
+            candidatePois, request.Language, dwellDefaults, 20, 180, cancellationToken);
+        
+        // Apply the estimates to the POIs
         foreach (var poi in candidatePois)
         {
-            poi.EstimatedMinVisitMinutes = await _openAIService.EstimateMinVisitMinutesAsync(
-                poi, request.Language, dwellDefaults, 20, 180, cancellationToken);
+            if (dwellEstimates.TryGetValue(poi.Id, out var estimate))
+            {
+                poi.EstimatedMinVisitMinutes = estimate;
+            }
+            else
+            {
+                // Fallback if POI wasn't in the batch result
+                poi.EstimatedMinVisitMinutes = dwellDefaults.GetValueOrDefault("default", 30);
+                _logger.LogWarning("POI {PoiId} missing from batch estimation, using fallback", poi.Id);
+            }
         }
+        
         _logger.LogDebug("DEBUG: Step 7 - Completed dwell time estimation");
 
         // Step 8: Filter by opening hours if strict mode enabled

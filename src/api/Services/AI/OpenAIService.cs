@@ -23,8 +23,9 @@ public interface IOpenAIService
 
     /// <summary>
     /// Maps user interests to Azure Maps POI categories using the dynamic category tree
+    /// Returns a dictionary where key is user category and value is list of Azure Maps numeric category IDs
     /// </summary>
-    Task<List<string>> MapInterestsToAzureMapsCategoriesAsync(
+    Task<Dictionary<string, List<int>>> MapInterestsToAzureMapsCategoriesAsync(
         string interests,
         string language,
         string cityName,
@@ -119,7 +120,7 @@ Allowed categories (id (azure_maps_category)): {allowedCategories}";
         }
     }
 
-    public async Task<List<string>> MapInterestsToAzureMapsCategoriesAsync(
+    public async Task<Dictionary<string, List<int>>> MapInterestsToAzureMapsCategoriesAsync(
         string interests,
         string language,
         string cityName,
@@ -163,27 +164,43 @@ Available Azure Maps POI Categories:
             var jsonContent = response.Value.Content[0].Text;
             var result = JsonSerializer.Deserialize<AzureMapsInterestMappingResult>(jsonContent);
             
-            var categoryIds = result?.CategoryIds ?? new List<string>();
+            var categoryMapping = result?.CategoryMapping ?? new Dictionary<string, List<int>>();
             
-            // Validate that returned IDs exist in available categories
-            var validCategoryIds = categoryIds
-                .Where(id => availableCategories.Any(c => c.IdString == id))
-                .ToList();
+            // Validate that returned IDs exist in available categories and convert to the correct format
+            var validatedMapping = new Dictionary<string, List<int>>();
+            var availableCategoryIds = new HashSet<int>(availableCategories.Select(c => c.Id));
             
-            return validCategoryIds;
+            foreach (var kvp in categoryMapping)
+            {
+                var validCategoryIds = kvp.Value
+                    .Where(id => availableCategoryIds.Contains(id))
+                    .ToList();
+                    
+                if (validCategoryIds.Any())
+                {
+                    validatedMapping[kvp.Key] = validCategoryIds;
+                }
+            }
+            
+            return validatedMapping;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to map interests to Azure Maps categories for input: {Interests}", interests);
             
-            // Fallback: return some general categories
+            // Fallback: return some general categories with user-friendly names
             var fallbackCategories = availableCategories
                 .Where(c => IsGeneralCategory(c))
                 .Take(3)
-                .Select(c => c.IdString)
                 .ToList();
+            
+            var fallbackMapping = new Dictionary<string, List<int>>();
+            if (fallbackCategories.Any())
+            {
+                fallbackMapping["general_attractions"] = fallbackCategories.Select(c => c.Id).ToList();
+            }
                 
-            return fallbackCategories;
+            return fallbackMapping;
         }
     }
 
@@ -480,32 +497,39 @@ Write as if you're there with them, pointing out details and sharing stories tha
     private static string GetAzureMapsInterestMappingPrompt() => @"
 You are an expert travel advisor with deep knowledge of Azure Maps POI categories.
 
-TASK: Map user interests to Azure Maps POI category IDs ensuring MANDATORY REPRESENTATION of each interest type.
+TASK: Map user interests to Azure Maps POI category IDs creating a MAPPING from user categories to Azure Maps numeric IDs.
 
-CRITICAL BALANCE RULES:
-1. EVERY distinct interest type MUST be represented (e.g., if user wants ""museums, food, historic sites"" - you MUST include categories for ALL THREE)
-2. For multiple interests: Allocate categories proportionally (3-4 interests = 1-2 categories each)
-3. For FOOD interests: Include 1-2 food categories but DO NOT SKIP food if mentioned
-4. For CULTURAL interests: Include relevant museum/historic/landmark categories
-5. NEVER completely ignore any mentioned interest type
+CRITICAL REQUIREMENTS:
+1. Return a mapping where each KEY is a user-friendly category name and VALUE is a list of Azure Maps numeric category IDs
+2. Create logical groupings - group related Azure Maps categories under meaningful user category names
+3. EVERY distinct interest type MUST be represented as a separate key in the mapping
+4. Use clear, user-friendly category names as keys (e.g., ""restaurants"", ""museums"", ""historic_sites"", ""attractions"")
 
-ALLOCATION STRATEGY:
-- 1 interest mentioned: Use 3-5 categories for depth
-- 2 interests mentioned: 2-3 categories each for balance  
-- 3+ interests mentioned: 1-2 categories each for coverage
+MAPPING STRATEGY:
+- Analyze user interests and create 2-5 logical category groups
+- For each group, find 1-3 relevant Azure Maps numeric category IDs
+- Use descriptive category names that match user intent
 
-FOOD CATEGORY HANDLING:
-- If food is mentioned: MUST include at least 1 food-related category
-- Choose diverse food types if allocating 2 food categories
-- Examples: restaurant + cafe, dining + coffee shop
+EXAMPLES:
+User interest: ""museums and historic sites""
+- ""museums"": [7317, 9361] 
+- ""historic_sites"": [7315, 9318]
+
+User interest: ""food and cafes""
+- ""restaurants"": [7315, 9361]
+- ""cafes"": [9376, 7313]
 
 OUTPUT FORMAT (JSON):
 {
-  ""categoryIds"": [""7317"", ""9361"", ""7315""],
-  ""reasoning"": ""Explanation showing mandatory representation of each mentioned interest""
+  ""categoryMapping"": {
+    ""restaurants"": [7315, 9361],
+    ""museums"": [7317, 9367],
+    ""attractions"": [7318]
+  },
+  ""reasoning"": ""Explanation of mapping logic""
 }
 
-CRITICAL: If a user mentions an interest, it MUST appear in your category selection. NO EXCEPTIONS.";
+CRITICAL: Return NUMERIC category IDs (integers), not strings. Group logically for better search control.";
 
     private static bool IsRelevantCategory(PoiCategory category)
     {
@@ -567,8 +591,13 @@ public class DescriptionGenerationResult
 
 public class AzureMapsInterestMappingResult
 {
-    [JsonPropertyName("categoryIds")]
-    public List<string> CategoryIds { get; set; } = new();
+    /// <summary>
+    /// Dictionary mapping user interest categories to lists of Azure Maps category IDs
+    /// Key: User-friendly category (e.g., "restaurants", "museums", "attractions")
+    /// Value: List of Azure Maps numeric category IDs
+    /// </summary>
+    [JsonPropertyName("categoryMapping")]
+    public Dictionary<string, List<int>> CategoryMapping { get; set; } = new();
     
     [JsonPropertyName("reasoning")]
     public string? Reasoning { get; set; }

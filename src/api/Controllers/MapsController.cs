@@ -24,29 +24,6 @@ public class MapsController : ControllerBase
     }
 
     /// <summary>
-    /// Gets an access token for Azure Maps client-side authentication
-    /// Available only in AAD authentication mode
-    /// </summary>
-    /// <returns>Azure Maps access token with expiration information</returns>
-    [HttpGet("token")]
-    [ProducesResponseType(typeof(MapsTokenResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status502BadGateway)]
-    public IActionResult GetAccessToken()
-    {
-        // Access tokens are not needed with subscription key authentication
-        _logger.LogWarning("Access token requested but only subscription key authentication is supported");
-        return BadRequest(new ProblemDetails
-        {
-            Title = "Access tokens not available",
-            Detail = "This application uses subscription key authentication. Access tokens are not needed or supported.",
-            Status = 400,
-            Instance = HttpContext.Request.Path
-        });
-    }
-
-    /// <summary>
     /// Proxy endpoint for Azure Maps tile requests (KEY mode only)
     /// This endpoint fetches map tiles server-side to avoid exposing subscription keys to clients
     /// </summary>
@@ -64,30 +41,9 @@ public class MapsController : ControllerBase
         return StatusCode(501, new ProblemDetails
         {
             Title = "Not implemented",
-            Detail = "Tile proxy is not supported. Use AAD authentication with Azure Maps client-side integration instead.",
+            Detail = "Tile proxy is not supported with subscription key authentication.",
             Status = 501,
             Instance = HttpContext.Request.Path
         });
     }
-}
-
-/// <summary>
-/// Response model for Azure Maps access token
-/// </summary>
-public class MapsTokenResponse
-{
-    /// <summary>
-    /// The access token for Azure Maps
-    /// </summary>
-    public string AccessToken { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Token expiration time in seconds
-    /// </summary>
-    public int ExpiresIn { get; set; }
-
-    /// <summary>
-    /// Token type (always "Bearer")
-    /// </summary>
-    public string TokenType { get; set; } = "Bearer";
 }

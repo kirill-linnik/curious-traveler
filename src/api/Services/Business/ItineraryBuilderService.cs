@@ -108,17 +108,17 @@ public class ItineraryBuilderService : IItineraryBuilderService
         var availableCategories = await _mapsService.GetPoiCategoryTreeAsync(request.Language);
         _logger.LogDebug("DEBUG: Step 5 - Loaded {Count} categories from Azure Maps", availableCategories.Count);
         
-        var azureMapsCategories = await _openAIService.MapInterestsToAzureMapsCategoriesAsync(
+        var categoryMapping = await _openAIService.MapInterestsToAzureMapsCategoriesAsync(
             request.Interests,
             request.Language,
             "Unknown City", // Could geocode to get city name
             availableCategories,
             cancellationToken);
 
-        _logger.LogDebug("DEBUG: Step 5 - AI mapped to {Count} Azure Maps categories: {Categories}", 
-            azureMapsCategories.Count, string.Join(", ", azureMapsCategories));
+        _logger.LogDebug("DEBUG: Step 5 - AI mapped to {Count} user categories: {Categories}", 
+            categoryMapping.Count, string.Join(", ", categoryMapping.Keys));
 
-        if (!azureMapsCategories.Any())
+        if (!categoryMapping.Any())
         {
             throw new InvalidOperationException("NO_POIS_IN_ISOCHRONE: No matching Azure Maps categories found for interests");
         }
@@ -127,55 +127,52 @@ public class ItineraryBuilderService : IItineraryBuilderService
         _logger.LogDebug("DEBUG: Step 6 - Search center: ({Lat},{Lon}), radius: {Radius} km",
             reachabilityCenter.Lat, reachabilityCenter.Lon, searchRadius);
         
-        // Step 6: Search for POIs per category with individual fallbacks
+        // Step 6: Search for POIs per user category (each containing multiple Azure Maps categories)
         var candidatePois = new List<PointOfInterest>();
-        var maxPoisPerCategory = 10; // Up to 10 POIs per category
+        var maxPoisPerUserCategory = 10; // Up to 10 POIs per user category (e.g. "restaurants", "museums")
         
-        // Get category names for fuzzy fallback
-        var matchedCategories = availableCategories
-            .Where(c => azureMapsCategories.Contains(c.IdString))
-            .ToList();
+        _logger.LogDebug("DEBUG: Step 6 - Performing searches for {Count} user categories", categoryMapping.Count);
         
-        _logger.LogDebug("DEBUG: Step 6 - Performing separate searches for {Count} categories", azureMapsCategories.Count);
-        
-        for (int i = 0; i < azureMapsCategories.Count; i++)
+        foreach (var userCategory in categoryMapping)
         {
-            var categoryId = azureMapsCategories[i];
+            var userCategoryName = userCategory.Key;
+            var azureMapsCategories = userCategory.Value;
             var categoryPois = new List<PointOfInterest>();
             
             try
             {
-                _logger.LogDebug("DEBUG: Step 6 - Searching category: {CategoryId}", categoryId);
+                _logger.LogDebug("DEBUG: Step 6 - Searching user category: {UserCategory} with {Count} Azure Maps categories: [{Categories}]", 
+                    userCategoryName, azureMapsCategories.Count, string.Join(", ", azureMapsCategories));
                 
+                // Search POIs for all Azure Maps categories in this user category
                 categoryPois = await _mapsService.SearchPoisAsync(
                     reachabilityCenter,
-                    new List<string> { categoryId }, // Single category per search
+                    azureMapsCategories, // List<int> now matches the method signature
                     searchRadius,
-                    limit: maxPoisPerCategory);
+                    limit: maxPoisPerUserCategory);
                 
-                _logger.LogDebug("DEBUG: Step 6 - Category {CategoryId} returned {Count} POIs", categoryId, categoryPois.Count);
+                _logger.LogDebug("DEBUG: Step 6 - User category {UserCategory} returned {Count} POIs", userCategoryName, categoryPois.Count);
                 
-                // If category search returned no results, try fuzzy search for this specific category
-                if (!categoryPois.Any() && i < matchedCategories.Count)
+                // If category search returned no results, try fuzzy search for this user category
+                if (!categoryPois.Any())
                 {
-                    var categoryName = matchedCategories[i].Name;
-                    _logger.LogDebug("DEBUG: Step 6 - Category {CategoryId} ({CategoryName}) returned 0 results, trying fuzzy fallback", 
-                        categoryId, categoryName);
+                    _logger.LogDebug("DEBUG: Step 6 - User category {UserCategory} returned 0 results, trying fuzzy fallback", userCategoryName);
                     
                     try
                     {
+                        // Use the user category name as the search term for fuzzy search
+                        var fuzzySearchTerms = new List<string> { userCategoryName };
                         categoryPois = await _mapsService.SearchPoisFuzzyAsync(
                             reachabilityCenter,
-                            new List<string> { categoryName },
+                            fuzzySearchTerms,
                             searchRadius,
-                            limit: maxPoisPerCategory);
+                            limit: maxPoisPerUserCategory);
                         
-                        _logger.LogDebug("DEBUG: Step 6 - Fuzzy fallback for {CategoryName} returned {Count} POIs", 
-                            categoryName, categoryPois.Count);
+                        _logger.LogDebug("DEBUG: Step 6 - Fuzzy search for {UserCategory} returned {Count} POIs", userCategoryName, categoryPois.Count);
                     }
                     catch (Exception fuzzyEx)
                     {
-                        _logger.LogWarning(fuzzyEx, "Fuzzy fallback failed for category {CategoryName}", categoryName);
+                        _logger.LogWarning(fuzzyEx, "Fuzzy search failed for user category {UserCategory}", userCategoryName);
                     }
                 }
                 
@@ -183,7 +180,7 @@ public class ItineraryBuilderService : IItineraryBuilderService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to search for category {CategoryId}, continuing with other categories", categoryId);
+                _logger.LogWarning(ex, "Failed to search for user category {UserCategory}, continuing with other categories", userCategoryName);
             }
         }
         
@@ -193,8 +190,8 @@ public class ItineraryBuilderService : IItineraryBuilderService
             .Select(g => g.First())
             .ToList();
 
-        _logger.LogDebug("DEBUG: Step 6 - Combined results: {Count} unique candidate POIs from {CategoryCount} categories", 
-            candidatePois.Count, azureMapsCategories.Count);
+        _logger.LogDebug("DEBUG: Step 6 - Combined results: {Count} unique candidate POIs from {CategoryCount} user categories", 
+            candidatePois.Count, categoryMapping.Count);
 
         if (!candidatePois.Any())
         {

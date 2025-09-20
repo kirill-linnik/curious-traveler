@@ -1,5 +1,6 @@
 using CuriousTraveler.Api.Services;
 using CuriousTraveler.Api.Models;
+using CuriousTraveler.Api.Models.Itinerary;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -27,10 +28,11 @@ namespace CuriousTraveler.Api.Tests.Services
             _configMock = new Mock<IConfiguration>();
             _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
             
-            _httpClient = new HttpClient(_httpMessageHandlerMock.Object);
+            // Setup configuration for AzureMaps with subscription key authentication
+            _configMock.Setup(c => c["AzureMaps:AccountName"]).Returns("test-account");
+            _configMock.Setup(c => c["AzureMaps:SubscriptionKey"]).Returns("test-subscription-key");
             
-            _configMock.Setup(c => c["AZURE_MAPS_AUTH_MODE"]).Returns("AAD");
-            _configMock.Setup(c => c["AZURE_MAPS_ACCOUNT_NAME"]).Returns("test-maps-account");
+            _httpClient = new HttpClient(_httpMessageHandlerMock.Object);
             
             _cacheMock.Setup(c => c.CreateEntry(It.IsAny<object>()))
                       .Returns<object>((key) => 
@@ -55,38 +57,32 @@ namespace CuriousTraveler.Api.Tests.Services
         public void Constructor_MissingAccountName_ThrowsInvalidOperationException()
         {
             var configMock = new Mock<IConfiguration>();
-            configMock.Setup(c => c["AZURE_MAPS_AUTH_MODE"]).Returns("AAD");
+            configMock.Setup(c => c["AzureMaps:SubscriptionKey"]).Returns("test-key");
 
             Assert.Throws<InvalidOperationException>(() => 
                 new AzureMapsService(_httpClient, _cacheMock.Object, _loggerMock.Object, configMock.Object));
         }
 
         [Fact]
-        public async Task GetAccessTokenAsync_AadMode_RequiresValidCredentials()
+        public void Constructor_MissingSubscriptionKey_ThrowsInvalidOperationException()
+        {
+            var configMock = new Mock<IConfiguration>();
+            configMock.Setup(c => c["AzureMaps:AccountName"]).Returns("test-account");
+
+            Assert.Throws<InvalidOperationException>(() => 
+                new AzureMapsService(_httpClient, _cacheMock.Object, _loggerMock.Object, configMock.Object));
+        }
+
+        [Fact]
+        public async Task GetAccessTokenAsync_ReturnsEmptyToken()
         {
             var service = new AzureMapsService(_httpClient, _cacheMock.Object, _loggerMock.Object, _configMock.Object);
 
-            // In a test environment without valid Azure credentials, this should either:
-            // 1. Throw an exception due to authentication failure, OR
-            // 2. Return a token if credentials are available (like in CI/CD)
-            // We'll test that the method doesn't hang or crash
-            try
-            {
-                var token = await service.GetAccessTokenAsync();
-                // If we get here, credentials were available - that's also valid
-                token.Should().NotBeNull();
-                token.AccessToken.Should().NotBeNullOrEmpty();
-            }
-            catch (Exception ex)
-            {
-                // Expected in environments without Azure credentials
-                ex.Should().NotBeNull();
-                // Common auth exceptions we expect in test environments
-                (ex.GetType().Name.Contains("Credential") || 
-                 ex.GetType().Name.Contains("Authentication") ||
-                 ex.Message.Contains("credential") ||
-                 ex.Message.Contains("authentication")).Should().BeTrue($"Expected auth-related exception, got: {ex.GetType().Name}: {ex.Message}");
-            }
+            var token = await service.GetAccessTokenAsync();
+            
+            token.Should().NotBeNull();
+            token.AccessToken.Should().BeEmpty();
+            token.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
         }
 
         [Theory]
@@ -97,6 +93,176 @@ namespace CuriousTraveler.Api.Tests.Services
         {
             var service = new AzureMapsService(_httpClient, _cacheMock.Object, _loggerMock.Object, _configMock.Object);
             var results = await service.SearchAsync(query!);
+            results.Should().NotBeNull().And.BeEmpty();
+        }
+
+        [Fact]
+        public async Task SearchPoisAsync_WithValidParameters_ShouldReturnResults()
+        {
+            // Arrange
+            var mockResponse = new
+            {
+                results = new[]
+                {
+                    new
+                    {
+                        poi = new { name = "Test Museum" },
+                        address = new { freeformAddress = "123 Test St" },
+                        position = new { lat = 47.6062, lon = -122.3321 },
+                        categories = new[] { "Museum" }
+                    }
+                }
+            };
+
+            var jsonResponse = JsonSerializer.Serialize(mockResponse);
+            var mockHttpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(jsonResponse, System.Text.Encoding.UTF8, "application/json")
+            };
+
+            _httpMessageHandlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(mockHttpResponse);
+
+            var service = new AzureMapsService(_httpClient, _cacheMock.Object, _loggerMock.Object, _configMock.Object);
+
+            // Act
+            var center = new LocationPoint { Lat = 47.6062, Lon = -122.3321 };
+            var results = await service.SearchPoisAsync(
+                center,
+                new List<int> { 7321 }, // Museum category
+                10.0, // 10km radius
+                10); // 10 results per category
+
+            // Assert
+            results.Should().NotBeNull();
+            results.Should().HaveCount(1);
+            results.First().Name.Should().Be("Test Museum");
+        }
+
+        [Fact]
+        public async Task SearchPoisAsync_WithEmptyCategoryIds_ShouldReturnEmpty()
+        {
+            // Arrange
+            var service = new AzureMapsService(_httpClient, _cacheMock.Object, _loggerMock.Object, _configMock.Object);
+
+            // Act
+            var center = new LocationPoint { Lat = 47.6062, Lon = -122.3321 };
+            var results = await service.SearchPoisAsync(
+                center,
+                new List<int>(), // Empty category list
+                10.0,
+                10);
+
+            // Assert
+            results.Should().NotBeNull().And.BeEmpty();
+        }
+
+        [Fact]
+        public async Task SearchPoisAsync_WithMultipleCategories_ShouldMakeMultipleApiCalls()
+        {
+            // Arrange
+            var mockResponse = new
+            {
+                results = new[]
+                {
+                    new
+                    {
+                        poi = new { name = "Test POI" },
+                        address = new { freeformAddress = "123 Test St" },
+                        position = new { lat = 47.6062, lon = -122.3321 },
+                        categories = new[] { "Test Category" }
+                    }
+                }
+            };
+
+            var jsonResponse = JsonSerializer.Serialize(mockResponse);
+            var mockHttpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(jsonResponse, System.Text.Encoding.UTF8, "application/json")
+            };
+
+            _httpMessageHandlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(mockHttpResponse);
+
+            var service = new AzureMapsService(_httpClient, _cacheMock.Object, _loggerMock.Object, _configMock.Object);
+
+            // Act
+            var center = new LocationPoint { Lat = 47.6062, Lon = -122.3321 };
+            var results = await service.SearchPoisAsync(
+                center,
+                new List<int> { 7321, 7315, 7374 }, // Multiple categories
+                10.0,
+                10);
+
+            // Assert - Should make 3 API calls (one per category)
+            _httpMessageHandlerMock.Protected()
+                .Verify<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    Times.Exactly(3),
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>());
+
+            results.Should().NotBeNull();
+            // Should return up to 30 results (10 per category * 3 categories)
+            results.Should().HaveCountLessOrEqualTo(30);
+        }
+
+        [Fact]
+        public async Task SearchPoisAsync_WithZeroLimit_ShouldReturnEmpty()
+        {
+            // Arrange
+            var service = new AzureMapsService(_httpClient, _cacheMock.Object, _loggerMock.Object, _configMock.Object);
+
+            // Act
+            var center = new LocationPoint { Lat = 47.6062, Lon = -122.3321 };
+            var results = await service.SearchPoisAsync(
+                center,
+                new List<int> { 7321 },
+                10.0,
+                0); // Zero limit
+
+            // Assert
+            results.Should().NotBeNull().And.BeEmpty();
+        }
+
+        [Fact]
+        public async Task SearchPoisAsync_WithNullCenter_ShouldThrowNullReferenceException()
+        {
+            // Arrange
+            var service = new AzureMapsService(_httpClient, _cacheMock.Object, _loggerMock.Object, _configMock.Object);
+
+            // Act & Assert - The actual service throws NullReferenceException when accessing center.Lat/Lon
+            await Assert.ThrowsAsync<NullReferenceException>(() =>
+                service.SearchPoisAsync(
+                    null!,
+                    new List<int> { 7321 },
+                    10.0,
+                    10));
+        }
+
+        [Fact]
+        public async Task SearchPoisAsync_WithNullCategoryIds_ShouldReturnEmpty()
+        {
+            // Arrange
+            var service = new AzureMapsService(_httpClient, _cacheMock.Object, _loggerMock.Object, _configMock.Object);
+
+            // Act - The service handles null categoryIds by checking if any exist
+            var center = new LocationPoint { Lat = 47.6062, Lon = -122.3321 };
+            var results = await service.SearchPoisAsync(
+                center,
+                null!,
+                10.0,
+                10);
+
+            // Assert - Service should handle gracefully and return empty result
             results.Should().NotBeNull().And.BeEmpty();
         }
     }

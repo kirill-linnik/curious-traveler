@@ -41,9 +41,7 @@ public class QueueService : IQueueService
     {
         try
         {
-            _logger.LogDebug("DEBUG: EnqueueJobAsync - Creating queue if not exists for job {JobId}", jobId);
-            await _queueClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
-            _logger.LogDebug("DEBUG: EnqueueJobAsync - Queue exists, preparing message for job {JobId}", jobId);
+            _logger.LogDebug("DEBUG: EnqueueJobAsync - Preparing message for job {JobId}", jobId);
             
             var message = JsonSerializer.Serialize(new { JobId = jobId });
             _logger.LogDebug("DEBUG: EnqueueJobAsync - Sending message to queue: {Message}", message);
@@ -63,7 +61,6 @@ public class QueueService : IQueueService
     {
         try
         {
-            _logger.LogDebug("DEBUG: DequeueJobAsync - Attempting to receive message from queue");
             var response = await _queueClient.ReceiveMessagesAsync(
                 maxMessages: 1,
                 visibilityTimeout: TimeSpan.FromMinutes(10), 
@@ -78,7 +75,7 @@ public class QueueService : IQueueService
             }
             else
             {
-                _logger.LogDebug("DEBUG: DequeueJobAsync - No messages available in queue");
+                // Don't log when no messages are available - this happens frequently during polling
                 return null;
             }
         }
@@ -152,8 +149,6 @@ public class TableStorageService : ITableStorageService
     {
         try
         {
-            await _tableClient.CreateIfNotExistsAsync(cancellationToken);
-            
             var response = await _tableClient.GetEntityIfExistsAsync<ItineraryJobEntity>(
                 partitionKey: GetPartitionKey(jobId),
                 rowKey: jobId,
@@ -172,8 +167,6 @@ public class TableStorageService : ITableStorageService
     {
         try
         {
-            await _tableClient.CreateIfNotExistsAsync(cancellationToken);
-            
             var entity = ItineraryJobEntity.FromItineraryJob(job);
             await _tableClient.AddEntityAsync(entity, cancellationToken);
             

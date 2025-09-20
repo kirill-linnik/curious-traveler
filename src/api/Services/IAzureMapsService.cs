@@ -55,11 +55,15 @@ public interface IAzureMapsService
     /// <summary>
     /// Searches for POIs by category within a geographic area
     /// </summary>
+    /// <param name="center">Center point for the search</param>
+    /// <param name="categoryIds">List of Azure Maps POI category IDs as integers</param>
+    /// <param name="radiusKm">Search radius in kilometers</param>
+    /// <param name="limit">Maximum number of total results</param>
     Task<List<PointOfInterest>> SearchPoisAsync(
         LocationPoint center,
-        List<string> categoryIds,
+        List<int> categoryIds,
         double radiusKm,
-        int limit = 50);
+        int limit = 10);
 
     /// <summary>
     /// Searches for POIs using fuzzy search with category keywords

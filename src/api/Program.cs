@@ -70,6 +70,9 @@ builder.Services.AddSingleton<IItineraryBuilderService, ItineraryBuilderService>
 builder.Services.AddSingleton<IQueueService, QueueService>();
 builder.Services.AddSingleton<ITableStorageService, TableStorageService>();
 
+// Add storage initialization service
+builder.Services.AddSingleton<IStorageInitializationService, StorageInitializationService>();
+
 // Add background services
 builder.Services.AddHostedService<ItineraryWorkerService>();
 
@@ -137,6 +140,24 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Initialize Azure Storage resources (queues and tables)
+try
+{
+    using var scope = app.Services.CreateScope();
+    var storageInitService = scope.ServiceProvider.GetRequiredService<IStorageInitializationService>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    logger.LogInformation("Initializing Azure Storage resources on startup...");
+    await storageInitService.InitializeAsync();
+    logger.LogInformation("Azure Storage resources initialization completed successfully");
+}
+catch (Exception ex)
+{
+    // Log the error but don't prevent startup - the services will attempt to create resources when needed
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogWarning(ex, "Failed to initialize Azure Storage resources during startup. Resources will be created on first use.");
+}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))

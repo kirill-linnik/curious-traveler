@@ -233,6 +233,12 @@ coverage/
 app.*.symbols
 app.*.map.json
 
+# .NET Test Results and Coverage Reports
+TestResults/
+**/TestResults/
+*.trx
+*.cobertura.xml
+
 # ============== EXCEPTIONS ====================
 # Files that should be included despite patterns above
 !**/ios/**/default.mode1v3

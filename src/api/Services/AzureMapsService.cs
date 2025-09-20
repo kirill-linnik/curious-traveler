@@ -47,6 +47,36 @@ public class AzureMapsService : IAzureMapsService
     }
 
     /// <summary>
+    /// Helper method to build Azure Maps API URLs with proper authentication
+    /// </summary>
+    private string BuildUrl(string endpoint, Dictionary<string, string>? parameters = null)
+    {
+        var url = $"{AzureMapsBaseUrl}{endpoint}";
+        var queryParams = new List<string>();
+        
+        if (parameters != null)
+        {
+            foreach (var param in parameters)
+            {
+                queryParams.Add($"{param.Key}={Uri.EscapeDataString(param.Value)}");
+            }
+        }
+        
+        // Add authentication based on mode
+        if (!string.IsNullOrWhiteSpace(_subscriptionKey))
+        {
+            queryParams.Add($"subscription-key={_subscriptionKey}");
+        }
+        
+        if (queryParams.Any())
+        {
+            url += "?" + string.Join("&", queryParams);
+        }
+        
+        return url;
+    }
+
+    /// <summary>
     /// Performs reverse geocoding to get address from coordinates
     /// </summary>
     public async Task<ReverseGeocodeResponse> ReverseGeocodeAsync(double latitude, double longitude, string? language = null)
@@ -411,34 +441,51 @@ public class AzureMapsService : IAzureMapsService
     /// </summary>
     public async Task<List<PointOfInterest>> SearchPoisAsync(
         LocationPoint center,
-        List<string> categoryIds,
+        List<int> categoryIds,
         double radiusKm,
-        int limit = 50)
+        int limit = 10)
     {
         try
         {
-            var categories = string.Join(",", categoryIds);
             var radiusMeters = (int)(radiusKm * 1000);
             
-            var url = $"{AzureMapsBaseUrl}/search/poi/category/json?api-version=1.0&subscription-key={_subscriptionKey}" +
-                     $"&query={categories}&lat={center.Lat}&lon={center.Lon}&radius={radiusMeters}&limit={limit}";
+            if (!categoryIds.Any())
+            {
+                _logger.LogWarning("No category IDs provided for POI search");
+                return [];
+            }
+            
+            // Combine all category IDs into a single request as recommended by Azure Maps documentation
+            var categorySet = string.Join(",", categoryIds);
+            
+            // Use the correct Azure Maps POI search endpoint with categorySet parameter
+            // Azure Maps requires a query parameter, use a generic term that works with category filtering
+            var url = $"{AzureMapsBaseUrl}/search/poi/json?api-version=1.0&subscription-key={_subscriptionKey}" +
+                     $"&query=*&categorySet={categorySet}&lat={center.Lat}&lon={center.Lon}&radius={radiusMeters}&limit={limit}&openingHours=nextSevenDays";
 
             _logger.LogDebug("DEBUG: POI Search - URL: {Url}", _subscriptionKey != null ? url.Replace(_subscriptionKey, "***") : url);
-            _logger.LogDebug("DEBUG: POI Search - Center: ({Lat},{Lon}), Radius: {RadiusKm}km, Categories: {Categories}", 
-                center.Lat, center.Lon, radiusKm, categories);
+            _logger.LogDebug("DEBUG: POI Search - Center: ({Lat},{Lon}), Radius: {RadiusKm}km, Categories: {CategorySet}, Limit: {Limit}", 
+                center.Lat, center.Lon, radiusKm, categorySet, limit);
 
             var response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Azure Maps POI search failed with status {StatusCode}: {ErrorContent}", 
+                    response.StatusCode, errorContent);
+                response.EnsureSuccessStatusCode(); // This will throw with the status code
+            }
             
             var jsonResponse = await response.Content.ReadAsStringAsync();
             _logger.LogDebug("DEBUG: POI Search - Response length: {Length} chars", jsonResponse.Length);
-            _logger.LogDebug("DEBUG: POI Search - Raw response: {Response}", jsonResponse);
             
             var searchResponse = JsonSerializer.Deserialize<AzureMapsSearchResponse>(jsonResponse);
-            _logger.LogDebug("DEBUG: POI Search - Found {Count} raw results", searchResponse?.Results?.Count ?? 0);
+            var resultCount = searchResponse?.Results?.Count ?? 0;
+            _logger.LogDebug("DEBUG: POI Search - Found {Count} raw results (requested {Limit})", 
+                resultCount, limit);
             
-            var pois = new List<PointOfInterest>();
-            
+            var allPois = new List<PointOfInterest>();
             foreach (var result in searchResponse?.Results ?? [])
             {
                 if (result.Position == null || result.Poi?.Name == null) continue;
@@ -455,11 +502,17 @@ public class AzureMapsService : IAzureMapsService
                     DistanceFromStartMeters = (int)CalculateDistance(center.Lat, center.Lon, result.Position.Lat, result.Position.Lon)
                 };
                 
-                pois.Add(poi);
+                allPois.Add(poi);
             }
             
-            _logger.LogDebug("DEBUG: POI Search - Returning {Count} valid POIs", pois.Count);
-            return pois;
+            // Sort by distance for consistent ordering
+            var finalPois = allPois
+                .OrderBy(p => p.DistanceFromStartMeters)
+                .ToList();
+            
+            _logger.LogDebug("DEBUG: POI Search - Returning {Count} total POIs from combined categories", 
+                finalPois.Count);
+            return finalPois;
         }
         catch (Exception ex)
         {

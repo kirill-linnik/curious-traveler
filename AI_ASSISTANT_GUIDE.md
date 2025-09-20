@@ -10,18 +10,16 @@ Curious Traveler is a comprehensive travel planning application with:
 ## Architecture Summary
 
 ### Technology Stack
-- **Backend**: .NET 8, ASP.NET Core Web API, Azure OpenAI, Azure Maps, Azure Speech Services
+- **Backend**: .NET 8, ASP.NET Core Web API, Azure OpenAI, Azure Maps, Azure Storage
 - **Mobile**: Flutter/Dart with provider pattern for state management and internationalization
-- **Infrastructure**: Azure (App Service, Key Vault, OpenAI, Speech Services, Azure Maps)
+- **Infrastructure**: Azure (App Service, Application Insights, OpenAI, Storage, Azure Maps)
 - **Testing**: xUnit, comprehensive unit and integration tests with mockito patterns
 - **Localization**: Flutter i18n with ARB files for complete 10-language support
 - **Geospatial**: Azure Maps for location services, search, and interactive map rendering
 
 ### Key Dependencies
-- `Azure.Identity` v1.16.0 for managed identity authentication
-- `Azure.Security.KeyVault.Secrets` v4.8.0 for secure configuration management
-- `Microsoft.AspNetCore.App` v8.0+ framework references
-- `Microsoft.Extensions.Http` v8.0.1 for HTTP client configuration
+- **Microsoft.AspNetCore.App** v8.0+ framework references
+- **Microsoft.Extensions.Http** v8.0.1 for HTTP client configuration
 - **Flutter**: Latest stable (3.24.0+) with Dart 3.8.0+
 - **Mobile Dependencies**: Updated packages (geolocator 14.0.2, audioplayers 6.5.1, webview_flutter 4.2.2)
 - All packages updated to latest versions (September 2025)
@@ -60,7 +58,7 @@ curious-traveler/
 - **Current Implementation**: Uses Azure OpenAI for itinerary generation and content creation
 - **Configuration**: Deployment names configured via environment variables
 - **Models**: Configured for latest available chat models (GPT-4, etc.)
-- **Security**: Integrated with managed identity for secure access
+- **Security**: Integrated with Azure App Service configuration for secure access
 
 ### Service Layer Architecture
 ```csharp
@@ -69,7 +67,6 @@ public interface IItineraryService
 {
     Task<ItineraryResponse> GenerateItineraryAsync(ItineraryRequest request);
     Task<ItineraryResponse> UpdateItineraryAsync(ItineraryUpdateRequest request);
-    Task<string> GenerateNarrationAsync(ItineraryLocation location, string language);
 }
 ```
 
@@ -99,10 +96,9 @@ public interface IItineraryService
 
 ### Azure Services Integration
 - **Azure Maps**: Uses Azure Maps for location search, reverse geocoding, and map rendering
-- **Key Vault**: Use `IKeyVaultService` for secrets retrieval
-- **Speech Services**: Use `ISpeechService` for text-to-speech conversion
+- **Azure Storage**: Uses queues and tables for background job processing
 - **OpenAI**: Use `IItineraryService` which wraps Azure OpenAI calls
-- **Managed Identity**: Secure authentication for Azure services without exposed keys
+- **Configuration**: Secure authentication for Azure services via App Service settings
 
 ### Deployment
 - Uses Azure Developer CLI (`azd up`) for infrastructure provisioning and deployment
@@ -157,8 +153,8 @@ All screens show localized content + audio uses same language
 
 ### Supported Languages
 - **Complete**: English, Spanish, French, German, Italian, Portuguese, Chinese (Simplified), Japanese, Korean, Russian (68+ strings each)
-- **Audio Support**: All languages supported by Azure Speech Services
-- **Unified Experience**: Single language selection controls both UI and audio
+- **UI Support**: Full interface localization for all supported languages
+- **Unified Experience**: Single language selection controls entire UI experience
 
 ### Testing Strategy
 - **Unit Tests**: LocaleProvider functionality (`locale_provider_test.dart`)

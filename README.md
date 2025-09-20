@@ -14,12 +14,11 @@ Built with modern Azure services and comprehensive multi-language support for gl
 - **Smart Location Detection**: GPS-based current location detection with fallback to manual entry
 - **Type-Ahead Location Search**: Real-time location search with autocomplete suggestions for POIs, addresses, and localities powered by Azure Maps
 - **Multi-Modal Transport**: Optimize routes for walking, public transit, or driving
-- **Multi-Language Support**: Full interface localization with synchronized audio narration in 10 languages
-- **Audio Narration**: Get location descriptions in your preferred language via Azure Speech Services
+- **Multi-Language Support**: Full interface localization in 10 languages
 - **Real-Time Updates**: Provide feedback to dynamically adjust your itinerary
 - **Cross-Platform Mobile**: Flutter app with Azure Maps Web SDK integration for iOS and Android
 - **Reliable Backend**: ASP.NET Core Web API hosted on Azure App Service with Azure Maps integration
-- **Secure Authentication**: Azure Maps access via Managed Identity (AAD) with subscription key fallback
+- **Secure Authentication**: Azure Maps access via subscription keys stored securely in Azure configuration
 
 ## 🏗️ Architecture
 
@@ -30,33 +29,27 @@ Built with modern Azure services and comprehensive multi-language support for gl
 │  ┌─────────────┐ │    │ ┌─────────────┐ │    └─────────────────┘
 │  │   WebView   │ │    │ │ Geocoding   │ │             │
 │  │ Azure Maps  │ │────│ │ Controller  │ │    ┌─────────────────┐
-│  │   Web SDK   │ │    │ │ Maps Token  │ │    │ Azure Speech    │
-│  └─────────────┘ │    │ │ Controller  │ │    │    Service      │
+│  │   Web SDK   │ │    │ │ Maps Token  │ │    │   Azure Storage │
+│  └─────────────┘ │    │ │ Controller  │ │    │ (Queues/Tables) │
 └─────────────────┘    │ └─────────────┘ │    └─────────────────┘
                        └─────────────────┘             │
                                 │                      │
                          ┌─────────────────┐    ┌─────────────────┐
-                         │   Azure Maps    │    │  Azure Key      │
-                         │  (Gen2 Account) │    │    Vault        │
-                         │  • Search API   │    │  • Maps Keys    │
-                         │  • Reverse API  │    │  • Secrets      │
+                         │   Azure Maps    │    │ Application     │
+                         │  (Gen2 Account) │    │   Insights      │
+                         │  • Search API   │    │ • Monitoring    │
+                         │  • Reverse API  │    │ • Logging       │
                          │  • Web SDK      │    └─────────────────┘
-                         └─────────────────┘
-                                │
-                         ┌─────────────────┐
-                         │ Managed Identity│
-                         │   (AAD Auth)    │
+                         │  • Routing API  │
                          └─────────────────┘
 ```
 
 ### Azure Maps Integration
 
 - **Azure Maps Gen2 Account**: Provisioned via Bicep for high-performance geospatial services
-- **Dual Authentication Modes**:
-  - **AAD Mode (Preferred)**: Uses Managed Identity for secure, keyless authentication
-  - **KEY Mode (Fallback)**: Uses subscription keys stored in Azure Key Vault
-- **Security**: Maps keys never exposed to clients; server-side authentication only
-- **Mobile Rendering**: Azure Maps Web SDK via WebView with token-based authentication
+- **Subscription Key Authentication**: Uses Azure Maps primary keys for secure API access
+- **Security**: Maps keys securely managed through Azure configuration, never exposed to clients
+- **Mobile Rendering**: Azure Maps Web SDK via WebView with server-generated access tokens
 
 ## 📋 Prerequisites
 
@@ -78,26 +71,12 @@ cd curious-traveler
 
 ### 2. Configure Environment
 
-1. Copy the environment template:
+1. Set your Azure environment name (optional):
 ```bash
-cp .env.example .env
+azd env set AZURE_ENV_NAME "your-environment-name"
 ```
 
-2. Configure Azure Maps Authentication Mode (optional):
-   
-   **Option A: AAD Authentication (Recommended - Default)**
-   ```bash
-   azd env set AZURE_MAPS_AUTH_MODE "AAD"
-   ```
-   
-   **Option B: Subscription Key Authentication (Fallback)**
-   ```bash
-   azd env set AZURE_MAPS_AUTH_MODE "KEY"
-   ```
-
-   **Note**: AAD mode uses Managed Identity for secure, keyless authentication. KEY mode stores subscription keys in Azure Key Vault. If not specified, AAD mode is used by default.
-
-3. Set additional configuration (optional):
+2. Set additional configuration (optional):
    ```bash
    # Set Azure Maps SKU (default: G2)
    azd env set AZURE_MAPS_SKU "G2"
@@ -123,26 +102,11 @@ This will:
 - Create Azure resource group
 - Deploy ASP.NET Core Web API on Azure App Service
 - **Provision Azure Maps Gen2 account** with automatic SKU selection
-- **Configure Managed Identity** and assign Azure Maps Data Reader role
+- **Configure Azure Maps with subscription key authentication**
 - Set up Azure OpenAI with GPT-4 models
-- Configure Azure Speech Services
-- Create Azure Key Vault for secrets (maps keys in KEY mode)
+- Configure Azure Storage for queues and tables
+- Set up Application Insights for monitoring and logging
 - Deploy the backend API with rate limiting and CORS
-- **Configure authentication mode** (AAD or KEY based on settings)
-
-### Authentication Modes
-
-#### AAD Mode (Default - Recommended)
-- Uses **System-Assigned Managed Identity** for secure authentication
-- **No keys exposed** - all authentication is token-based
-- Maps Data Reader role automatically assigned to the Web App
-- Mobile clients receive short-lived access tokens via `/api/maps/token` endpoint
-
-#### KEY Mode (Fallback)
-- Uses subscription keys stored securely in **Azure Key Vault**
-- Keys retrieved at runtime using Managed Identity
-- Mobile clients use server-side tile proxy to avoid key exposure
-- Useful for development or environments where AAD isn't available
 
 ### 4. Configure Mobile App
 
@@ -184,10 +148,9 @@ Note: No function keys are required since this is an App Service deployment with
 The application implements a **secure-by-design** approach for Azure Maps access:
 
 1. **Server-Side Only Authentication**: Azure Maps credentials are never sent to client applications
-2. **Managed Identity Integration**: Uses Azure AD for keyless authentication (AAD mode)
-3. **Key Vault Protection**: Subscription keys encrypted and stored in Azure Key Vault (KEY mode)
-4. **Token-Based Client Access**: Mobile apps receive short-lived tokens for map rendering
-5. **Role-Based Access**: Minimal permission assignment (Azure Maps Data Reader only)
+2. **Subscription Key Security**: Primary keys securely managed through Azure App Service configuration
+3. **Token-Based Client Access**: Mobile apps receive short-lived access tokens for map rendering
+4. **API Rate Limiting**: Built-in rate limiting protects Azure Maps quotas
 
 ### Endpoints
 
@@ -195,15 +158,15 @@ The application implements a **secure-by-design** approach for Azure Maps access
 - `GET /api/geocode/reverse?latitude={lat}&longitude={lon}&language={lang}` - Convert coordinates to addresses
 - `GET /api/geocode/search?query={q}&language={lang}&limit={n}` - Search for locations
 
-#### Azure Maps Token API (New)
-- `GET /api/maps/token` - Get short-lived access token for client-side map rendering (AAD mode only)
+#### Azure Maps Token API
+- `GET /api/maps/token` - Get short-lived access token for client-side map rendering
 
 ### Client-Side Map Integration
 
 The mobile app uses **Azure Maps Web SDK** for map rendering:
 
 ```dart
-// Token-based authentication (AAD mode)
+// Token-based authentication for mobile maps
 final token = await azureMapsService.getToken();
 webViewController.loadHtmlString('''
 <!DOCTYPE html>
@@ -229,23 +192,11 @@ webViewController.loadHtmlString('''
 ''');
 ```
 
-### Switching Authentication Modes
-
-To change authentication modes after deployment:
-
 1. **Switch to KEY mode:**
    ```bash
    azd env set AZURE_MAPS_AUTH_MODE "KEY"
    azd up
    ```
-
-2. **Switch to AAD mode:**
-   ```bash
-   azd env set AZURE_MAPS_AUTH_MODE "AAD"
-   azd up
-   ```
-
-**Note**: Mode changes require redeployment to update infrastructure and application settings.
 
 ### Deployment Automation
 
@@ -423,7 +374,7 @@ Get short-lived access token for client-side Azure Maps rendering (AAD mode only
 ### Technical Implementation
 
 - **Azure Maps Integration**: Direct REST API calls to Azure Maps Search services
-- **Dual Authentication**: AAD (Managed Identity) and KEY (Azure Key Vault) modes
+- **Subscription Key Authentication**: Secure server-side API key management
 - **Memory Caching**: 80% reduction in API calls through intelligent caching strategies
 - **Search Debouncing**: 300ms delay prevents excessive API requests during typing
 - **Permission Handling**: Proper GPS permission flow with graceful fallbacks
@@ -442,10 +393,9 @@ cd src/api
 
 2. Configure user secrets for local development:
 
-   **For AAD Mode (Recommended):**
    ```bash
-   dotnet user-secrets set "AZURE_MAPS_AUTH_MODE" "AAD"
-   dotnet user-secrets set "AZURE_MAPS_ACCOUNT_NAME" "your-dev-maps-account"
+   dotnet user-secrets set "AzureMaps:SubscriptionKey" "your-dev-maps-subscription-key"
+   dotnet user-secrets set "AzureMaps:AccountName" "your-dev-maps-account"
    ```
 
    **For KEY Mode:**
@@ -552,14 +502,13 @@ flutter run
 
 ## 🔐 Security & Authentication
 
-The application uses Azure Managed Identity for secure service-to-service authentication:
+The application uses secure Azure configuration management:
 
-- **App Service** → **Azure OpenAI**: Managed Identity with Cognitive Services OpenAI User role
-- **App Service** → **Speech Service**: Managed Identity with Cognitive Services User role
-- **App Service** → **Key Vault**: Managed Identity with Key Vault Secrets User role
-- **App Service** → **Storage**: Managed Identity with Storage Blob Data Owner role
+- **App Service** → **Azure OpenAI**: API key authentication via secure environment variables
+- **App Service** → **Azure Maps**: Subscription key authentication via secure environment variables  
+- **App Service** → **Storage**: Connection string authentication via secure environment variables
 
-No API keys are stored in application code - all secrets are managed through Azure Key Vault.
+No API keys are stored in application code - all secrets are managed through Azure App Service configuration.
 
 ## 💰 Cost Optimization
 
@@ -577,13 +526,13 @@ This solution is optimized for hackathon/demo usage:
 - **GPT-4 Mini**: $0.15/1M input tokens, $0.60/1M output tokens
 - **Estimated cost**: ~$0.50-2.00 per day for demo usage
 
-### Azure Speech Services
-- **Pay-per-character** TTS
-- **Standard voices**: $4/1M characters
-- **Neural voices**: $16/1M characters
+### Azure Maps
+- **Pay-per-transaction** pricing
+- **Search API**: $0.50/1K transactions
+- **Reverse Geocoding**: $0.50/1K transactions
 - **Estimated cost**: ~$0.10-0.50 per day for demo usage
 
-### Total Estimated Daily Cost: $1.10-6.10
+### Total Estimated Daily Cost: $0.70-3.00
 
 ## 🛠️ Troubleshooting
 
@@ -597,13 +546,13 @@ This solution is optimized for hackathon/demo usage:
 
 2. **App Service deployment timeout**:
    - Check Application Insights logs in Azure Portal
-   - Verify managed identity permissions
+   - Verify Azure configuration is correct
    - Ensure all environment variables are set
 
 3. **OpenAI API errors**:
    - Verify deployment names match configuration
    - Check quota limits in Azure Portal
-   - Ensure proper role assignments
+   - Ensure API keys are properly configured
 
 ### Mobile App Issues
 
@@ -616,11 +565,6 @@ This solution is optimized for hackathon/demo usage:
    - Enable location services in device settings
    - Grant app location permissions
    - Check platform-specific permission configurations
-
-3. **Audio playback issues**:
-   - Verify Speech Service configuration
-   - Check device audio permissions
-   - Ensure network connectivity
 
 ## 📖 API Documentation
 
@@ -758,10 +702,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **Azure OpenAI** for intelligent itinerary generation
-- **Azure Speech Services** for multilingual narration
 - **Azure Maps** for geospatial services, routing, and location search
 - **Flutter** for cross-platform mobile development
-- **Azure App Service** for Web API hosting and Managed Identity integration
+- **Azure App Service** for Web API hosting and secure configuration management
 
 ## � Troubleshooting
 
@@ -769,16 +712,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 #### Authentication Errors
 **Problem**: `401 Unauthorized` responses from Azure Maps APIs
-- **AAD Mode**: Ensure Managed Identity has "Azure Maps Data Reader" role assigned
-- **KEY Mode**: Verify Azure Maps primary key is correctly stored in Key Vault
-- **Check**: Application settings include correct `AZURE_MAPS_AUTH_MODE` and `AZURE_MAPS_ACCOUNT_NAME`
+- **Check**: Application settings include correct Azure Maps subscription key
+- **Verify**: Azure Maps account is properly configured
 
 ```bash
-# Verify current authentication mode
+# Verify current configuration
 azd env get-values | grep AZURE_MAPS
 
-# Check role assignments
-az role assignment list --assignee <managed-identity-id> --scope <maps-account-resource-id>
+# Check App Service configuration
+az webapp config appsettings list --name <app-name> --resource-group <resource-group>
 ```
 
 #### Mobile Map Rendering Issues
@@ -818,24 +760,24 @@ az vm list-usage --location eastus | grep -i maps
 #### Application Settings
 **Problem**: Backend API returns configuration errors
 - **Missing Settings**: Verify all required app settings are deployed
-- **Key Vault Access**: Ensure Managed Identity can access Key Vault secrets
+- **Azure Configuration**: Ensure Azure App Service has proper environment variables
 - **Connection Strings**: Check Application Insights and other service connections
 
 ```bash
 # List current app settings
 az webapp config appsettings list --name <app-name> --resource-group <rg-name>
 
-# Test Key Vault access
-az keyvault secret show --vault-name <vault-name> --name AZURE-MAPS-PRIMARY-KEY
+# Test configuration
+az webapp log tail --name <app-name> --resource-group <rg-name>
 ```
 
 ### Development Issues
 
 #### Local Authentication
 **Problem**: Azure Maps calls fail in local development
-- **AAD Mode**: Run `az login` and ensure account has access to Maps account
-- **KEY Mode**: Set user secrets with valid Azure Maps key
-- **Configuration**: Verify `AZURE_MAPS_ACCOUNT_NAME` matches actual account
+- **Subscription Key**: Set user secrets with valid Azure Maps subscription key
+- **Configuration**: Verify `AzureMaps:AccountName` matches actual account name
+- **Environment**: Ensure local development settings are properly configured
 
 #### Mobile Development
 **Problem**: Flutter app compilation or runtime errors

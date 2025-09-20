@@ -7,9 +7,8 @@ A Flutter-based mobile application for AI-driven personalized city exploration. 
 - **AI-Powered Itineraries**: Generate personalized travel plans using Azure OpenAI
 - **Smart Location Detection**: GPS-based location detection with graceful fallbacks
 - **Type-Ahead Search**: Real-time location search with Azure Maps integration
-- **Multi-Language Support**: Complete localization for 10 languages with synchronized audio
+- **Multi-Language Support**: Complete localization for 10 languages
 - **Interactive Maps**: Azure Maps Web SDK integration via WebView
-- **Audio Narration**: Location descriptions with Azure Speech Services
 - **Cross-Platform**: Native iOS and Android support
 
 ## 🏗️ Architecture
@@ -18,12 +17,11 @@ A Flutter-based mobile application for AI-driven personalized city exploration. 
 - **Provider Pattern**: Clean separation of state management and UI
 - **LocaleProvider**: Centralized language selection and persistence
 - **LocationProvider**: GPS and location search state management
-- **ItineraryProvider**: Travel plan and audio state management
+- **ItineraryProvider**: Travel plan state management
 
 ### Key Components
 - **Location Search**: Type-ahead search with overlay dropdown
 - **Azure Maps Widget**: Interactive map rendering with WebView
-- **Audio Player**: Speech synthesis playback with error handling
 - **Interest Selector**: Multi-selection UI for travel preferences
 - **Language Selector**: Dynamic language switching
 
@@ -104,7 +102,6 @@ The app provides complete localization support for 10 languages:
 - **ARB Files**: All translations stored in `lib/l10n/app_*.arb`
 - **Generated Code**: Flutter automatically generates `AppLocalizations` class
 - **No Hardcoded Strings**: All user-facing text uses the localization system
-- **Synchronized Audio**: Interface language controls audio narration language
 
 ### Adding New Languages
 
@@ -162,7 +159,6 @@ flutter test test/integration/
 - `webview_flutter`: Azure Maps Web SDK integration
 
 ### UI & Media
-- `audioplayers`: Audio narration playback
 - `url_launcher`: External URL handling
 
 ### Networking

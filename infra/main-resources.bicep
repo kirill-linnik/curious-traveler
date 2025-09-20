@@ -24,8 +24,13 @@ param openAISku string = 'S0'
 @description('Whether to deploy Azure OpenAI resources (can be disabled to avoid provisioning conflicts)')
 param deployOpenAI bool = true
 
-// Generate resource token for unique names 
-var resourceToken = 'curioustr'
+// Generate resource token for unique names using subscription ID and environment name
+// This approach ensures:
+// - Deterministic naming: Same subscription + environment = same resource names
+// - No conflicts: Different subscriptions will get different resource names
+// - Global uniqueness: Azure Storage and other globally unique resources won't conflict
+// - Developer isolation: Each developer working in their own subscription gets unique names
+var resourceToken = take(uniqueString(subscription().subscriptionId, environmentName), 10)
 
 // Common tags for all resources
 var tags = {
